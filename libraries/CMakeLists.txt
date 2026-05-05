@@ -1,0 +1,7 @@
+add_subdirectory(assimp)
+add_subdirectory(glad)
+add_subdirectory(glfw)
+add_subdirectory(glm)
+add_subdirectory(imgui)
+add_subdirectory(itugl)
+add_subdirectory(stb)

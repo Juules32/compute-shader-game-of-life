@@ -1,0 +1,12 @@
+# build directories
+out*
+build*
+cmake-build*
+
+# IDE config directories
+.vs
+.vscode
+.idea
+
+# config files
+*.ini
