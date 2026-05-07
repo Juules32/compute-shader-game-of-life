@@ -1,4 +1,4 @@
-#include "ConwayApplication.h"
+#include "ConwayApplication.hpp"
 
 int main() {
     ConwayApplication particlesApplication;

@@ -1,4 +1,4 @@
-#include "ConwayApplication.h"
+#include "ConwayApplication.hpp"
 
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
@@ -10,16 +10,21 @@
 #include <vector>
 #include <imgui.h>
 
+#include "CPUGameOfLifeSimulation.hpp"
+
 constexpr auto WINDOW_NAME = "Conway's Game of Life";
 
-constexpr int INITIAL_WINDOW_WIDTH = 1280;
+constexpr int INITIAL_WINDOW_WIDTH = 720;
 constexpr int INITIAL_WINDOW_HEIGHT = 720;
 
-constexpr int INITIAL_GRID_WIDTH = INITIAL_WINDOW_WIDTH / 4;
-constexpr int INITIAL_GRID_HEIGHT = INITIAL_WINDOW_HEIGHT / 4;
-
+constexpr int INITIAL_GRID_WIDTH = 32;
+constexpr int INITIAL_GRID_HEIGHT = 32;
 constexpr int MIN_GRID_SIZE = 32;
 constexpr int MAX_GRID_SIZE = 1024;
+
+constexpr float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
+constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 1000.0f;
+constexpr float MAX_GAME_OF_LIFE_UPDATE_RATE = 1.0f;
 
 struct Vertex {
     glm::vec2 position;
@@ -29,10 +34,16 @@ struct Vertex {
 ConwayApplication::ConwayApplication() : Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME) {}
 
 void ConwayApplication::Initialize() {
+
     Application::Initialize();
 
-    gridWidth = INITIAL_GRID_WIDTH;
-    gridHeight = INITIAL_GRID_HEIGHT;
+    uiGridWidth = INITIAL_GRID_WIDTH;
+    uiGridHeight = INITIAL_GRID_HEIGHT;
+    uiGameOfLifeUpdateRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
+    uiChangeIsWrapping = std::nullopt;
+    uiRegenerateGrid = true;
+
+    currentFrameTime = 0;
 
     imGui.Initialize(GetMainWindow());
 
@@ -40,7 +51,8 @@ void ConwayApplication::Initialize() {
 
     InitializeShaders();
 
-    CreateOrUpdateTexture();
+    gameOfLife = std::make_unique<CPUGameOfLifeSimulation>();
+    gameOfLife->Initialize(uiGridWidth, uiGridHeight);
 
     shaderProgram.Use();
 
@@ -48,6 +60,7 @@ void ConwayApplication::Initialize() {
         shaderProgram.GetUniformLocation("gridTexture"),
         0
     );
+
 }
 
 void ConwayApplication::Cleanup() {
@@ -59,9 +72,24 @@ void ConwayApplication::Cleanup() {
 void ConwayApplication::Update() {
     Application::Update();
 
-    if (regenerateGrid) {
-        CreateOrUpdateTexture();
-        regenerateGrid = false;
+    currentFrameTime += GetDeltaTime();
+    if (currentFrameTime >= uiGameOfLifeUpdateRate) {
+        currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
+        gameOfLife->Update();
+    }
+
+    if (uiRegenerateGrid) {
+        gameOfLife->Resize(uiGridWidth, uiGridHeight);
+        shaderProgram.Use();
+        shaderProgram.SetUniform(
+            shaderProgram.GetUniformLocation("gridSize"),
+            glm::vec2(uiGridWidth, uiGridHeight)
+        );
+        uiRegenerateGrid = false;
+    }
+    if (uiChangeIsWrapping.has_value()) {
+        gameOfLife->SetWrapping(uiChangeIsWrapping.value());
+        uiChangeIsWrapping.reset();
     }
 }
 
@@ -71,7 +99,7 @@ void ConwayApplication::Render() {
     shaderProgram.Use();
 
     TextureObject::SetActiveTexture(0);
-    gridTexture.Bind();
+    gameOfLife->GetTexture().Bind();
 
     vao.Bind();
 
@@ -80,11 +108,22 @@ void ConwayApplication::Render() {
     imGui.BeginFrame();
 
     if (auto window = imGui.UseWindow("Conway Controls")) {
-        ImGui::SliderInt("Width", &gridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
-        ImGui::SliderInt("Height", &gridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
-
+        ImGui::SliderInt("Width", &uiGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderInt("Height", &uiGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderFloat(
+            "Update Rate",
+            &uiGameOfLifeUpdateRate,
+            MIN_GAME_OF_LIFE_UPDATE_RATE,
+            MAX_GAME_OF_LIFE_UPDATE_RATE
+        );
+        if (ImGui::Button("Enable Wrapping")) {
+            uiChangeIsWrapping = true;
+        }
+        if (ImGui::Button("Disable Wrapping")) {
+            uiChangeIsWrapping = false;
+        }
         if (ImGui::Button("Regenerate")) {
-            regenerateGrid = true;
+            uiRegenerateGrid = true;
         }
     }
 
@@ -130,51 +169,6 @@ void ConwayApplication::InitializeGeometry() {
     VertexBufferObject::Unbind();
 
     drawcall = Drawcall(Drawcall::Primitive::Triangles, 6, 0);
-}
-
-void ConwayApplication::CreateOrUpdateTexture() {
-    std::vector<std::byte> gridData(gridWidth * gridHeight);
-
-    // rand() makes patterns appear, so we use <random>
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution dist(0, 1);
-    for (auto &cell : gridData) {
-        cell = dist(rng) ? std::byte{255} : std::byte{0};
-    }
-
-    gridTexture.Bind();
-
-    gridTexture.SetImage<std::byte>(
-        0,
-        gridWidth,
-        gridHeight,
-        TextureObject::FormatR,
-        TextureObject::InternalFormatR8,
-        std::span(gridData),
-        Data::Type::UByte
-    );
-
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::MinFilter,
-        GL_NEAREST
-    );
-
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::MagFilter,
-        GL_NEAREST
-    );
-
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapS,
-        GL_CLAMP_TO_EDGE
-    );
-
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapT,
-        GL_CLAMP_TO_EDGE
-    );
-
-    Texture2DObject::Unbind();
 }
 
 // Load, compile and Build shaders

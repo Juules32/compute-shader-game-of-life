@@ -6,9 +6,26 @@ out vec4 FragColor;
 
 uniform sampler2D gridTexture;
 
-void main()
-{
-    float state = texture(gridTexture, vUV).r;      // Sample given texture using UV
-    vec3 color = vec3(state);                       // Create color from the raw texture data
-    FragColor = vec4(color, 1.0);                   // Set color that GL uses by adding alpha component
+uniform vec2 gridSize;
+
+void main() {
+    float state = texture(gridTexture, vUV).r;
+
+    vec3 color = vec3(state);
+
+    vec2 cellUV = fract(vUV * gridSize);
+
+    float thickness = 0.03;
+
+    bool line =
+        cellUV.x < thickness ||
+        cellUV.x > 1.0 - thickness ||
+        cellUV.y < thickness ||
+        cellUV.y > 1.0 - thickness;
+
+    if (line) {
+        color = vec3(0.5);
+    }
+
+    FragColor = vec4(color, 1.0);
 }
