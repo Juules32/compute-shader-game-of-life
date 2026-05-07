@@ -1,7 +1,7 @@
-#include "ParticlesApplication.h"
+#include "ConwayApplication.h"
 
 int main()
 {
-    ParticlesApplication particlesApplication;
+    ConwayApplication particlesApplication;
     return particlesApplication.Run();
 }
