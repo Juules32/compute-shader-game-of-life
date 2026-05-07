@@ -17,6 +17,7 @@ void CPUGameOfLifeSimulation::Initialize(int width, int height) {
     }
 
     gridTexture.Bind();
+
     gridTexture.SetParameter(
         TextureObject::ParameterEnum::MinFilter,
         GL_NEAREST

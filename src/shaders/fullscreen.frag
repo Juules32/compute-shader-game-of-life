@@ -8,7 +8,8 @@ uniform sampler2D gridTexture;
 
 uniform vec2 gridSize;
 
-const float GRID_LINE_THICKNESS = 0.03;
+const float GRID_LINE_THICKNESS = 0.05;
+const vec2 GRID_LINE_SIZE_THRESHOLD = vec2(100.0, 100.0 * (9.0 / 16.0));
 
 void main() {
     float state = texture(gridTexture, vUV).r;
@@ -23,7 +24,7 @@ void main() {
         cellUV.y < GRID_LINE_THICKNESS ||
         cellUV.y > 1.0 - GRID_LINE_THICKNESS;
 
-    if (line) {
+    if (line && gridSize.x < GRID_LINE_SIZE_THRESHOLD.x && gridSize.y < GRID_LINE_SIZE_THRESHOLD.y) {
         color = vec3(0.5);
     }
 

@@ -31,13 +31,13 @@ private:
     Drawcall drawcall;
     DearImGui imGui;
 
-    int uiGridWidth;
-    int uiGridHeight;
-    float uiGameOfLifeUpdateRate;
+    int uiGridWidth{};
+    int uiGridHeight{};
+    float uiGameOfLifeUpdateRate{};
     std::optional<bool> uiChangeIsWrapping;
-    bool uiRegenerateGrid;
+    bool uiRegenerateGrid{};
 
     std::unique_ptr<GameOfLifeSimulation> gameOfLife;
 
-    float currentFrameTime;
+    float currentFrameTime{};
 };

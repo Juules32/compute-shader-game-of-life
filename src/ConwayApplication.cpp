@@ -31,24 +31,20 @@ struct Vertex {
     glm::vec2 uv;
 };
 
-ConwayApplication::ConwayApplication() : Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME) {}
+ConwayApplication::ConwayApplication() :
+    Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME),
+    uiGridWidth(INITIAL_GRID_WIDTH),
+    uiGridHeight(INITIAL_GRID_HEIGHT),
+    uiGameOfLifeUpdateRate(INITIAL_GAME_OF_LIFE_UPDATE_RATE),
+    uiChangeIsWrapping(std::nullopt),
+    uiRegenerateGrid(true),
+    currentFrameTime(0)
+{}
 
 void ConwayApplication::Initialize() {
     Application::Initialize();
 
-    uiGridWidth = INITIAL_GRID_WIDTH;
-    uiGridHeight = INITIAL_GRID_HEIGHT;
-    uiGameOfLifeUpdateRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
-    uiChangeIsWrapping = std::nullopt;
-    uiRegenerateGrid = true;
-
-    currentFrameTime = 0;
-
     imGui.Initialize(GetMainWindow());
-
-    // Disable ImGui .ini file
-    ImGuiIO& io = ImGui::GetIO();
-    io.IniFilename = nullptr;
 
     InitializeGeometry();
 
@@ -205,7 +201,7 @@ void ConwayApplication::LoadAndCompileShader(Shader& shader, const char* path) {
     // Try to compile
     if (!shader.Compile()) {
         // Get errors in case of failure
-        std::array<char, 2048> errors;
+        std::array<char, 2048> errors{};
         shader.GetCompilationErrors(errors);
         std::cout << "Error compiling shader: " << path << std::endl;
         std::cout << errors.data() << std::endl;
