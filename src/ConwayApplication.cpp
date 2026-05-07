@@ -34,7 +34,6 @@ struct Vertex {
 ConwayApplication::ConwayApplication() : Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME) {}
 
 void ConwayApplication::Initialize() {
-
     Application::Initialize();
 
     uiGridWidth = INITIAL_GRID_WIDTH;
@@ -46,6 +45,10 @@ void ConwayApplication::Initialize() {
     currentFrameTime = 0;
 
     imGui.Initialize(GetMainWindow());
+
+    // Disable ImGui .ini file
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
 
     InitializeGeometry();
 
@@ -60,7 +63,6 @@ void ConwayApplication::Initialize() {
         shaderProgram.GetUniformLocation("gridTexture"),
         0
     );
-
 }
 
 void ConwayApplication::Cleanup() {
