@@ -1,7 +1,6 @@
 #include "ConwayApplication.h"
 
-int main()
-{
+int main() {
     ConwayApplication particlesApplication;
     return particlesApplication.Run();
 }

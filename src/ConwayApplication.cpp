@@ -21,8 +21,7 @@ constexpr int INITIAL_GRID_HEIGHT = INITIAL_WINDOW_HEIGHT / 4;
 constexpr int MIN_GRID_SIZE = 32;
 constexpr int MAX_GRID_SIZE = 1024;
 
-struct Vertex
-{
+struct Vertex {
     glm::vec2 position;
     glm::vec2 uv;
 };
@@ -80,13 +79,11 @@ void ConwayApplication::Render() {
 
     imGui.BeginFrame();
 
-    if (auto window = imGui.UseWindow("Conway Controls"))
-    {
+    if (auto window = imGui.UseWindow("Conway Controls")) {
         ImGui::SliderInt("Width", &gridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
         ImGui::SliderInt("Height", &gridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
-        if (ImGui::Button("Regenerate"))
-        {
+        if (ImGui::Button("Regenerate")) {
             regenerateGrid = true;
         }
     }
@@ -196,8 +193,7 @@ void ConwayApplication::InitializeShaders() {
 void ConwayApplication::LoadAndCompileShader(Shader& shader, const char* path) {
     // Open the file for reading
     std::ifstream file(path);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         std::cout << "Can't find file: " << path << std::endl;
         std::cout << "Is your working directory properly set?" << std::endl;
         return;
@@ -211,8 +207,7 @@ void ConwayApplication::LoadAndCompileShader(Shader& shader, const char* path) {
     shader.SetSource(stringStream.str().c_str());
 
     // Try to compile
-    if (!shader.Compile())
-    {
+    if (!shader.Compile()) {
         // Get errors in case of failure
         std::array<char, 2048> errors;
         shader.GetCompilationErrors(errors);
