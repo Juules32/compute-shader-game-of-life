@@ -23,6 +23,7 @@ private:
 
     void InitializeGeometry();
     void InitializeShaders();
+    void UpdateSimulation();
 
     VertexBufferObject vbo;
     VertexArrayObject vao;
@@ -30,11 +31,15 @@ private:
     Drawcall drawcall;
     DearImGui imGui;
 
-    int uiGridWidth{};
-    int uiGridHeight{};
-    float uiGameOfLifeUpdateRate{};
+    int uiGridWidth;
+    int uiGridHeight;
+    float uiGameOfLifeUpdateRate;
     std::optional<bool> uiChangeIsWrapping;
-    bool uiRegenerateGrid{};
+    bool uiRegenerateGrid;
+    SimulationType uiSimulationType;
+    bool uiRandomizeGridGeneration;
+    bool uiPauseSimulation;
+    bool uiPerformSingleStep;
 
     std::unique_ptr<GameOfLifeSimulation> gameOfLife;
 

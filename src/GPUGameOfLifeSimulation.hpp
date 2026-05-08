@@ -13,7 +13,7 @@ public:
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;
     const Texture2DObject& GetTexture() override;
-    void SetWrapping(bool value) override;
+    void SetWrapping(bool value);
 
 private:
     void UpdateTexture();

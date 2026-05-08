@@ -38,7 +38,11 @@ ConwayApplication::ConwayApplication() :
     uiGameOfLifeUpdateRate(INITIAL_GAME_OF_LIFE_UPDATE_RATE),
     uiChangeIsWrapping(std::nullopt),
     uiRegenerateGrid(true),
-    currentFrameTime(0)
+    currentFrameTime(0),
+    uiRandomizeGridGeneration(false),
+    uiSimulationType(SimulationType::CPU),
+    uiPauseSimulation(false),
+    uiPerformSingleStep(false)
 {}
 
 void ConwayApplication::Initialize() {
@@ -50,8 +54,7 @@ void ConwayApplication::Initialize() {
 
     InitializeShaders();
 
-    gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
-    gameOfLife->Initialize(uiGridWidth, uiGridHeight);
+    UpdateSimulation();
 
     shaderProgram.Use();
 
@@ -59,6 +62,15 @@ void ConwayApplication::Initialize() {
         shaderProgram.GetUniformLocation("gridTexture"),
         0
     );
+}
+
+void ConwayApplication::UpdateSimulation() {
+    if (uiSimulationType == SimulationType::CPU) {
+        gameOfLife = std::make_unique<CPUGameOfLifeSimulation>();
+    } else {
+        gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
+    }
+    gameOfLife->Initialize(uiGridWidth, uiGridHeight);
 }
 
 void ConwayApplication::Cleanup() {
@@ -70,14 +82,19 @@ void ConwayApplication::Cleanup() {
 void ConwayApplication::Update() {
     Application::Update();
 
-    currentFrameTime += GetDeltaTime();
-    if (currentFrameTime >= uiGameOfLifeUpdateRate) {
-        currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
+    if (uiPerformSingleStep) {
         gameOfLife->Update();
+        uiPerformSingleStep = false;
+    } else {
+        currentFrameTime += GetDeltaTime();
+        if (!uiPauseSimulation && currentFrameTime >= uiGameOfLifeUpdateRate) {
+            currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
+            gameOfLife->Update();
+        }
     }
 
     if (uiRegenerateGrid) {
-        gameOfLife->Resize(uiGridWidth, uiGridHeight);
+        UpdateSimulation();
         shaderProgram.Use();
         shaderProgram.SetUniform(
             shaderProgram.GetUniformLocation("gridSize"),
@@ -104,23 +121,31 @@ void ConwayApplication::Render() {
 
     imGui.BeginFrame();
 
-    if (auto window = imGui.UseWindow("Conway Controls")) {
+    if (auto window = imGui.UseWindow("Grid Generation")) {
         ImGui::SliderInt("Width", &uiGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
         ImGui::SliderInt("Height", &uiGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
+
+        ImGui::RadioButton("CPU - Single Threaded", (int*)&uiSimulationType, CPU);
+        ImGui::SameLine();
+        ImGui::RadioButton("GPU - Compute Shader", (int*)&uiSimulationType, GPU);
+        if (ImGui::Button("Regenerate")) {
+            uiRegenerateGrid = true;
+        }
+    }
+    if (auto window = imGui.UseWindow("Settings")) {
         ImGui::SliderFloat(
             "Update Rate",
             &uiGameOfLifeUpdateRate,
             MIN_GAME_OF_LIFE_UPDATE_RATE,
             MAX_GAME_OF_LIFE_UPDATE_RATE
         );
-        if (ImGui::Button("Enable Wrapping")) {
-            uiChangeIsWrapping = true;
+        bool isWrapping = gameOfLife->GetWrapping();
+        if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
+            uiChangeIsWrapping = isWrapping;
         }
-        if (ImGui::Button("Disable Wrapping")) {
-            uiChangeIsWrapping = false;
-        }
-        if (ImGui::Button("Regenerate")) {
-            uiRegenerateGrid = true;
+        ImGui::Checkbox("Pause Simulation", &uiPauseSimulation);
+        if (uiPauseSimulation && ImGui::Button("Perform Single Step")) {
+            uiPerformSingleStep = true;
         }
     }
 

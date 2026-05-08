@@ -2,16 +2,10 @@
 
 #include <random>
 #include <vector>
+#include <cassert>
 
 void CPUGameOfLifeSimulation::Initialize(int width, int height) {
     Resize(width, height);
-
-    // rand() makes patterns appear, so we use <random>
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution dist(0, 1);
-    for (auto &cell : grid) {
-        cell = dist(rng) ? ALIVE : DEAD;
-    }
 
     gridTexture.Bind();
 
@@ -42,11 +36,21 @@ void CPUGameOfLifeSimulation::Resize(int width, int height) {
 
     grid.resize(width * height, DEAD);
 
+    // rand() makes patterns appear, so we use <random>
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution dist(0, 1);
+    for (auto &cell : grid) {
+        cell = dist(rng) ? ALIVE : DEAD;
+    }
+
     UpdateTexture();
 }
 
 void CPUGameOfLifeSimulation::UpdateTexture() {
     gridTexture.Bind();
+
+    // Fixes alignment for widths not divisible by 4
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     gridTexture.SetImage<std::byte>(
         0,
@@ -122,15 +126,21 @@ int CPUGameOfLifeSimulation::CountNeighbors(int x, int y) {
 }
 
 bool CPUGameOfLifeSimulation::GetCell(int x, int y) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
     return grid[y * width + x] == ALIVE;
+}
+
+void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    grid[y * width + x] = alive ? ALIVE : DEAD;
 }
 
 const Texture2DObject& CPUGameOfLifeSimulation::GetTexture() {
     return gridTexture;
-}
-
-void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
-    grid[y * width + x] = alive ? ALIVE : DEAD;
 }
 
 void CPUGameOfLifeSimulation::SetWrapping(bool value) {
