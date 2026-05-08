@@ -28,6 +28,7 @@ void GPUGameOfLifeSimulation::Initialize(int width, int height) {
     readTex  = &textures[0];
     writeTex = &textures[1];
 }
+
 void GPUGameOfLifeSimulation::Resize(int width, int height) {
     this->width = width;
     this->height = height;
