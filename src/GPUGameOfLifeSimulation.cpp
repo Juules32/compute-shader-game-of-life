@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 
-void GPUGameOfLifeSimulation::Initialize(int width, int height) {
+void GPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridGeneration) {
     Shader computeShader(Shader::ComputeShader);
 
     LoadAndCompileShader(computeShader, "shaders/gameoflife.comp");
@@ -22,25 +22,10 @@ void GPUGameOfLifeSimulation::Initialize(int width, int height) {
         isWrapping ? 1 : 0
     );
 
-    Resize(width, height);
-
-    // pointer setup (start state)
-    readTex  = &textures[0];
-    writeTex = &textures[1];
-}
-
-void GPUGameOfLifeSimulation::Resize(int width, int height) {
     this->width = width;
     this->height = height;
 
-    std::vector<std::byte> grid(width * height);
-
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution dist(0, 1);
-
-    for (auto& cell : grid) {
-        cell = dist(rng) ? std::byte{255} : std::byte{0};
-    }
+    std::vector<std::byte> grid = GenerateNewGrid(randomGridGeneration);
 
     for (int i = 0; i < 2; i++) {
         textures[i].Bind();
@@ -70,7 +55,12 @@ void GPUGameOfLifeSimulation::Resize(int width, int height) {
     }
 
     Texture2DObject::Unbind();
+
+    // pointer setup (start state)
+    readTex  = &textures[0];
+    writeTex = &textures[1];
 }
+
 
 void GPUGameOfLifeSimulation::Update() {
     computeProgram.Use();

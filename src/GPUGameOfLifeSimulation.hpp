@@ -7,8 +7,7 @@
 
 class GPUGameOfLifeSimulation : public GameOfLifeSimulation {
 public:
-    void Resize(int width, int height) override;
-    void Initialize(int width, int height) override;
+    void Initialize(int width, int height, bool randomGridGeneration) override;
     void Update() override;
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;

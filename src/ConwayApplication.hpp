@@ -40,6 +40,7 @@ private:
     bool uiRandomizeGridGeneration;
     bool uiPauseSimulation;
     bool uiPerformSingleStep;
+    bool uiRandomGridGeneration;
 
     std::unique_ptr<GameOfLifeSimulation> gameOfLife;
 

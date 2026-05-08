@@ -4,8 +4,13 @@
 #include <vector>
 #include <cassert>
 
-void CPUGameOfLifeSimulation::Initialize(int width, int height) {
-    Resize(width, height);
+void CPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridGeneration) {
+    this->width = width;
+    this->height = height;
+
+    grid = GenerateNewGrid(randomGridGeneration);
+
+    UpdateTexture();
 
     gridTexture.Bind();
 
@@ -28,22 +33,6 @@ void CPUGameOfLifeSimulation::Initialize(int width, int height) {
         TextureObject::ParameterEnum::WrapT,
         GL_CLAMP_TO_EDGE
     );
-}
-
-void CPUGameOfLifeSimulation::Resize(int width, int height) {
-    this->width = width;
-    this->height = height;
-
-    grid.resize(width * height, DEAD);
-
-    // rand() makes patterns appear, so we use <random>
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution dist(0, 1);
-    for (auto &cell : grid) {
-        cell = dist(rng) ? ALIVE : DEAD;
-    }
-
-    UpdateTexture();
 }
 
 void CPUGameOfLifeSimulation::UpdateTexture() {

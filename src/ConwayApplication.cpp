@@ -23,7 +23,7 @@ constexpr int MIN_GRID_SIZE = 32;
 constexpr int MAX_GRID_SIZE = 1024;
 
 constexpr float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
-constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 1000.0f;
+constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 2000.0f;
 constexpr float MAX_GAME_OF_LIFE_UPDATE_RATE = 1.0f;
 
 struct Vertex {
@@ -42,7 +42,8 @@ ConwayApplication::ConwayApplication() :
     uiRandomizeGridGeneration(false),
     uiSimulationType(SimulationType::CPU),
     uiPauseSimulation(false),
-    uiPerformSingleStep(false)
+    uiPerformSingleStep(false),
+    uiRandomGridGeneration(false)
 {}
 
 void ConwayApplication::Initialize() {
@@ -70,7 +71,7 @@ void ConwayApplication::UpdateSimulation() {
     } else {
         gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
     }
-    gameOfLife->Initialize(uiGridWidth, uiGridHeight);
+    gameOfLife->Initialize(uiGridWidth, uiGridHeight, uiRandomGridGeneration);
 }
 
 void ConwayApplication::Cleanup() {
@@ -120,32 +121,46 @@ void ConwayApplication::Render() {
     drawcall.Draw();
 
     imGui.BeginFrame();
+    if (auto window = imGui.UseWindow("Game of Life Controls")) {
 
-    if (auto window = imGui.UseWindow("Grid Generation")) {
+        ImGui::Text("Grid Generation");
+        ImGui::Separator();
+
         ImGui::SliderInt("Width", &uiGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
         ImGui::SliderInt("Height", &uiGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
-        ImGui::RadioButton("CPU - Single Threaded", (int*)&uiSimulationType, CPU);
+        ImGui::RadioButton("Single Threaded Simulation", (int*)&uiSimulationType, CPU);
         ImGui::SameLine();
-        ImGui::RadioButton("GPU - Compute Shader", (int*)&uiSimulationType, GPU);
+        ImGui::RadioButton("Compute Shader Simulation", (int*)&uiSimulationType, GPU);
+
+        ImGui::Checkbox("Random Grid Generation", &uiRandomGridGeneration);
+
         if (ImGui::Button("Regenerate")) {
             uiRegenerateGrid = true;
         }
-    }
-    if (auto window = imGui.UseWindow("Settings")) {
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+
+        ImGui::Text("Simulation Settings");
+        ImGui::Separator();
+
         ImGui::SliderFloat(
             "Update Rate",
             &uiGameOfLifeUpdateRate,
             MIN_GAME_OF_LIFE_UPDATE_RATE,
             MAX_GAME_OF_LIFE_UPDATE_RATE
         );
+
+        ImGui::Checkbox("Pause Simulation", &uiPauseSimulation);
+
+        if (uiPauseSimulation && ImGui::Button("Perform Single Step")) {
+            uiPerformSingleStep = true;
+        }
+
         bool isWrapping = gameOfLife->GetWrapping();
         if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
             uiChangeIsWrapping = isWrapping;
-        }
-        ImGui::Checkbox("Pause Simulation", &uiPauseSimulation);
-        if (uiPauseSimulation && ImGui::Button("Perform Single Step")) {
-            uiPerformSingleStep = true;
         }
     }
 
