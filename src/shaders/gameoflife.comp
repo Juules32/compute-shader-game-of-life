@@ -4,12 +4,33 @@ layout(local_size_x = 8, local_size_y = 8) in;
 
 layout(r8, binding = 0) readonly uniform image2D currentGrid;
 layout(r8, binding = 1) writeonly uniform image2D nextGrid;
+uniform int isWrapping;
 
-int GetCell(ivec2 pos, ivec2 size)
-{
-    pos = (pos + size) % size;
+const float ALIVE_THRESHOLD = 0.5;
 
-    return imageLoad(currentGrid, pos).r > 0.5 ? 1 : 0;
+int GetCell(ivec2 pos, ivec2 size) {
+    if (isWrapping == 1) {
+        pos = (pos + size) % size;
+    }
+    else {
+        pos = clamp(pos, ivec2(0), size - 1);
+    }
+
+    return imageLoad(currentGrid, pos).r < ALIVE_THRESHOLD ? 1 : 0;
+}
+
+int CountNeighbors(ivec2 pos, ivec2 size) {
+    int neighbors = 0;
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            if (x == 0 && y == 0) {
+                continue;
+            }
+
+            neighbors += GetCell(pos + ivec2(x, y), size);
+        }
+    }
+    return neighbors;
 }
 
 void main()
@@ -18,18 +39,7 @@ void main()
 
     ivec2 size = imageSize(currentGrid);
 
-    int neighbors = 0;
-
-    for (int y = -1; y <= 1; y++)
-    {
-        for (int x = -1; x <= 1; x++)
-        {
-            if (x == 0 && y == 0)
-            continue;
-
-            neighbors += GetCell(pos + ivec2(x, y), size);
-        }
-    }
+    int neighbors = CountNeighbors(pos, size);
 
     int alive = GetCell(pos, size);
 
@@ -49,6 +59,6 @@ void main()
     imageStore(
         nextGrid,
         pos,
-        vec4(result, 0, 0, 1)
+        vec4(1 - result, 0, 0, 1)
     );
 }

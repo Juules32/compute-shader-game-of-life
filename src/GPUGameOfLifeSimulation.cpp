@@ -10,15 +10,17 @@
 void GPUGameOfLifeSimulation::Initialize(int width, int height) {
     Shader computeShader(Shader::ComputeShader);
 
-    LoadAndCompileShader(
-        computeShader,
-        "shaders/gameoflife.comp"
-    );
+    LoadAndCompileShader(computeShader, "shaders/gameoflife.comp");
 
-    if (!computeProgram.Build(computeShader))
-    {
+    if (!computeProgram.Build(computeShader)) {
         std::cout << "Failed to build compute shader\n";
     }
+
+    computeProgram.Use();
+    computeProgram.SetUniform(
+        computeProgram.GetUniformLocation("isWrapping"),
+        isWrapping ? 1 : 0
+    );
 
     Resize(width, height);
 }
@@ -27,14 +29,10 @@ void GPUGameOfLifeSimulation::Resize(int width, int height) {
     this->width = width;
     this->height = height;
 
-    std::vector<std::byte> grid(
-        width * height
-    );
+    std::vector<std::byte> grid(width * height);
 
     std::mt19937 rng(std::random_device{}());
-
     std::uniform_int_distribution dist(0, 1);
-
     for (auto& cell : grid)
     {
         cell = dist(rng)
@@ -80,13 +78,25 @@ void GPUGameOfLifeSimulation::Resize(int width, int height) {
 
     nextTexture.Bind();
 
-    nextTexture.SetImage(
+    nextTexture.SetImage<std::byte>(
         0,
         width,
         height,
         TextureObject::FormatR,
-        TextureObject::InternalFormatR8
+        TextureObject::InternalFormatR8,
+        std::span(grid),
+        Data::Type::UByte
     );
+
+    nextTexture.Bind();
+
+    // critical for compute/image usage
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+    // ensure no filtering that implies mipmaps
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     nextTexture.SetParameter(
         TextureObject::ParameterEnum::MinFilter,
@@ -114,14 +124,17 @@ void GPUGameOfLifeSimulation::Resize(int width, int height) {
 
     Texture2DObject::Unbind();
 }
-
-void GPUGameOfLifeSimulation::Update() {
+void GPUGameOfLifeSimulation::Update()
+{
     computeProgram.Use();
 
-    std::cout << "test\n";
+    // Pick textures via references (NO swapping objects)
+    Texture2DObject& readTex  = flip ? nextTexture : currentTexture;
+    Texture2DObject& writeTex = flip ? currentTexture : nextTexture;
+
     glBindImageTexture(
         0,
-        currentTexture.GetHandle(),
+        readTex.GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -129,10 +142,9 @@ void GPUGameOfLifeSimulation::Update() {
         GL_R8
     );
 
-
     glBindImageTexture(
         1,
-        nextTexture.GetHandle(),
+        writeTex.GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -140,20 +152,15 @@ void GPUGameOfLifeSimulation::Update() {
         GL_R8
     );
 
-    glDispatchCompute(
-        (width + 7) / 8,
-        (height + 7) / 8,
-        1
-    );
+    GLuint groupsX = (width + 7) / 8;
+    GLuint groupsY = (height + 7) / 8;
 
-    glMemoryBarrier(
-        GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-    );
+    glDispatchCompute(groupsX, groupsY, 1);
 
-    std::swap(
-        currentTexture,
-        nextTexture
-    );
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    // Flip state instead of swapping objects
+    flip = !flip;
 }
 
 void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
@@ -180,12 +187,16 @@ bool GPUGameOfLifeSimulation::GetCell(int x, int y) {
     return false;
 }
 
-const Texture2DObject&
-GPUGameOfLifeSimulation::GetTexture() {
-    return currentTexture;
+const Texture2DObject& GPUGameOfLifeSimulation::GetTexture()
+{
+    return flip ? nextTexture : currentTexture;
 }
 
 void GPUGameOfLifeSimulation::SetWrapping(bool value) {
     isWrapping = value;
-    Resize(width, height);
+    computeProgram.Use();
+    computeProgram.SetUniform(
+        computeProgram.GetUniformLocation("isWrapping"),
+        isWrapping ? 1 : 0
+    );
 }

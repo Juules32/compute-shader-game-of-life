@@ -22,4 +22,5 @@ private:
     Texture2DObject nextTexture;
 
     ShaderProgram computeProgram;
+    bool flip = false;
 };
