@@ -23,8 +23,11 @@ void GPUGameOfLifeSimulation::Initialize(int width, int height) {
     );
 
     Resize(width, height);
-}
 
+    // pointer setup (start state)
+    readTex  = &textures[0];
+    writeTex = &textures[1];
+}
 void GPUGameOfLifeSimulation::Resize(int width, int height) {
     this->width = width;
     this->height = height;
@@ -33,108 +36,47 @@ void GPUGameOfLifeSimulation::Resize(int width, int height) {
 
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution dist(0, 1);
-    for (auto& cell : grid)
-    {
-        cell = dist(rng)
-            ? std::byte{255}
-            : std::byte{0};
+
+    for (auto& cell : grid) {
+        cell = dist(rng) ? std::byte{255} : std::byte{0};
     }
 
-    currentTexture.Bind();
+    for (int i = 0; i < 2; i++) {
+        textures[i].Bind();
 
-    currentTexture.SetImage<std::byte>(
-        0,
-        width,
-        height,
-        TextureObject::FormatR,
-        TextureObject::InternalFormatR8,
-        std::span(grid),
-        Data::Type::UByte
-    );
+        textures[i].SetImage<std::byte>(
+            0,
+            width,
+            height,
+            TextureObject::FormatR,
+            TextureObject::InternalFormatR8,
+            std::span(grid),
+            Data::Type::UByte
+        );
 
-    currentTexture.SetParameter(
-        TextureObject::ParameterEnum::MinFilter,
-        GL_NEAREST
-    );
+        textures[i].SetParameter(TextureObject::ParameterEnum::MinFilter, GL_NEAREST);
+        textures[i].SetParameter(TextureObject::ParameterEnum::MagFilter, GL_NEAREST);
 
-    currentTexture.SetParameter(
-        TextureObject::ParameterEnum::MagFilter,
-        GL_NEAREST
-    );
+        textures[i].SetParameter(
+            TextureObject::ParameterEnum::WrapS,
+            isWrapping ? GL_REPEAT : GL_CLAMP_TO_EDGE
+        );
 
-    currentTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapS,
-        isWrapping
-            ? GL_REPEAT
-            : GL_CLAMP_TO_EDGE
-    );
-
-    currentTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapT,
-        isWrapping
-            ? GL_REPEAT
-            : GL_CLAMP_TO_EDGE
-    );
-
-    nextTexture.Bind();
-
-    nextTexture.SetImage<std::byte>(
-        0,
-        width,
-        height,
-        TextureObject::FormatR,
-        TextureObject::InternalFormatR8,
-        std::span(grid),
-        Data::Type::UByte
-    );
-
-    nextTexture.Bind();
-
-    // critical for compute/image usage
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-
-    // ensure no filtering that implies mipmaps
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    nextTexture.SetParameter(
-        TextureObject::ParameterEnum::MinFilter,
-        GL_NEAREST
-    );
-
-    nextTexture.SetParameter(
-        TextureObject::ParameterEnum::MagFilter,
-        GL_NEAREST
-    );
-
-    nextTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapS,
-        isWrapping
-            ? GL_REPEAT
-            : GL_CLAMP_TO_EDGE
-    );
-
-    nextTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapT,
-        isWrapping
-            ? GL_REPEAT
-            : GL_CLAMP_TO_EDGE
-    );
+        textures[i].SetParameter(
+            TextureObject::ParameterEnum::WrapT,
+            isWrapping ? GL_REPEAT : GL_CLAMP_TO_EDGE
+        );
+    }
 
     Texture2DObject::Unbind();
 }
-void GPUGameOfLifeSimulation::Update()
-{
-    computeProgram.Use();
 
-    // Pick textures via references (NO swapping objects)
-    Texture2DObject& readTex  = flip ? nextTexture : currentTexture;
-    Texture2DObject& writeTex = flip ? currentTexture : nextTexture;
+void GPUGameOfLifeSimulation::Update() {
+    computeProgram.Use();
 
     glBindImageTexture(
         0,
-        readTex.GetHandle(),
+        readTex->GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -144,7 +86,7 @@ void GPUGameOfLifeSimulation::Update()
 
     glBindImageTexture(
         1,
-        writeTex.GetHandle(),
+        writeTex->GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -159,14 +101,14 @@ void GPUGameOfLifeSimulation::Update()
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    // Flip state instead of swapping objects
-    flip = !flip;
+    // swap pointers (THIS is the key change)
+    std::swap(readTex, writeTex);
 }
 
 void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
     std::byte value = alive ? ALIVE : DEAD;
 
-    currentTexture.Bind();
+    readTex->Bind();
 
     glTexSubImage2D(
         GL_TEXTURE_2D,
@@ -187,9 +129,8 @@ bool GPUGameOfLifeSimulation::GetCell(int x, int y) {
     return false;
 }
 
-const Texture2DObject& GPUGameOfLifeSimulation::GetTexture()
-{
-    return flip ? nextTexture : currentTexture;
+const Texture2DObject& GPUGameOfLifeSimulation::GetTexture() {
+    return *readTex;
 }
 
 void GPUGameOfLifeSimulation::SetWrapping(bool value) {

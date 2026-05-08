@@ -18,8 +18,9 @@ public:
 private:
     void UpdateTexture();
 
-    Texture2DObject currentTexture;
-    Texture2DObject nextTexture;
+    Texture2DObject textures[2];
+    Texture2DObject* readTex = nullptr;
+    Texture2DObject* writeTex = nullptr;
 
     ShaderProgram computeProgram;
     bool flip = false;
