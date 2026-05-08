@@ -2,6 +2,9 @@
 
 #include "ituGL/texture/Texture2DObject.h"
 
+constexpr auto ALIVE = std::byte{0};
+constexpr auto DEAD = std::byte{255};
+
 class GameOfLifeSimulation
 {
 protected:

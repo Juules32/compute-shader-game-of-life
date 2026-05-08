@@ -32,7 +32,7 @@ public:
     // Each type of object will use a different function to Bind, so we leave it as a pure virtual function
     virtual void Bind() const = 0;
 
-protected:
+//protected:
     // Give access to derived classes to modify the handle
     inline Handle& GetHandle() { return m_handle; }
 

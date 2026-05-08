@@ -3,9 +3,6 @@
 #include <random>
 #include <vector>
 
-constexpr auto ALIVE = std::byte{0};
-constexpr auto DEAD = std::byte{255};
-
 void CPUGameOfLifeSimulation::Initialize(int width, int height) {
     Resize(width, height);
 

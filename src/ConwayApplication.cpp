@@ -1,16 +1,16 @@
 #include "ConwayApplication.hpp"
+#include "util.hpp"
 
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
-#include <array>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <random>
 #include <vector>
 #include <imgui.h>
 
 #include "CPUGameOfLifeSimulation.hpp"
+#include "GPUGameOfLifeSimulation.hpp"
 
 constexpr auto WINDOW_NAME = "Conway's Game of Life";
 
@@ -50,7 +50,7 @@ void ConwayApplication::Initialize() {
 
     InitializeShaders();
 
-    gameOfLife = std::make_unique<CPUGameOfLifeSimulation>();
+    gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
     gameOfLife->Initialize(uiGridWidth, uiGridHeight);
 
     shaderProgram.Use();
@@ -96,7 +96,6 @@ void ConwayApplication::Render() {
 
     shaderProgram.Use();
 
-    TextureObject::SetActiveTexture(0);
     gameOfLife->GetTexture().Bind();
 
     vao.Bind();
@@ -179,31 +178,5 @@ void ConwayApplication::InitializeShaders() {
 
     if (!shaderProgram.Build(vertexShader, fragmentShader)) {
         std::cout << "Error linking shaders\n";
-    }
-}
-
-void ConwayApplication::LoadAndCompileShader(Shader& shader, const char* path) {
-    // Open the file for reading
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        std::cout << "Can't find file: " << path << std::endl;
-        std::cout << "Is your working directory properly set?" << std::endl;
-        return;
-    }
-
-    // Dump the contents into a string
-    std::stringstream stringStream;
-    stringStream << file.rdbuf() << '\0';
-
-    // Set the source code from the string
-    shader.SetSource(stringStream.str().c_str());
-
-    // Try to compile
-    if (!shader.Compile()) {
-        // Get errors in case of failure
-        std::array<char, 2048> errors{};
-        shader.GetCompilationErrors(errors);
-        std::cout << "Error compiling shader: " << path << std::endl;
-        std::cout << errors.data() << std::endl;
     }
 }

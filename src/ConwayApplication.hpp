@@ -23,7 +23,6 @@ private:
 
     void InitializeGeometry();
     void InitializeShaders();
-    void LoadAndCompileShader(Shader& shader, const char* path);
 
     VertexBufferObject vbo;
     VertexArrayObject vao;
