@@ -23,7 +23,7 @@ constexpr int INITIAL_WINDOW_HEIGHT = 720;
 constexpr int INITIAL_GRID_WIDTH = 32;
 constexpr int INITIAL_GRID_HEIGHT = 32;
 constexpr int MIN_GRID_SIZE = 32;
-constexpr int MAX_GRID_SIZE = 4096;
+const int MAX_GRID_SIZE = static_cast<int>(std::pow(2, 13));
 
 constexpr float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
 constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 2000.0f;
@@ -88,25 +88,27 @@ void ConwayApplication::Cleanup() {
 void ConwayApplication::Update() {
     Application::Update();
 
-
+    bool updateGameOfLife = false;
     if (uiPerformSingleStep) {
-        gameOfLife->Update();
+        updateGameOfLife = true;
         uiPerformSingleStep = false;
     } else {
         currentFrameTime += GetDeltaTime();
         if (!uiPauseSimulation && currentFrameTime >= uiGameOfLifeUpdateRate) {
             currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
-
-            auto updateStart = Clock::now();
-
-            gameOfLife->Update();
-
-            auto updateEnd = Clock::now();
-
-            const float updateDuration = std::chrono::duration<float, std::milli>(updateEnd - updateStart).count();
-            updateFrameRates[updateFrameIndex] = 1000.0f / updateDuration;
-            updateFrameIndex = (updateFrameIndex + 1) % updateFrameRates.size();
+            updateGameOfLife = true;
         }
+    }
+    if (updateGameOfLife) {
+        auto updateStart = Clock::now();
+
+        gameOfLife->Update();
+
+        auto updateEnd = Clock::now();
+
+        const float updateDuration = std::chrono::duration<float, std::milli>(updateEnd - updateStart).count();
+        updateFrameTimes[updateFrameIndex] = updateDuration;
+        updateFrameIndex = (updateFrameIndex + 1) % updateFrameTimes.size();
     }
 
     if (uiRegenerateGrid) {
@@ -123,9 +125,13 @@ void ConwayApplication::Update() {
         uiChangeIsWrapping.reset();
     }
 
+    frameRates[frameIndex] = 1.0f / GetDeltaTime();
+    frameIndex = (frameIndex + 1) % frameRates.size();
 }
 
 void ConwayApplication::Render() {
+    auto renderStart = Clock::now();
+
     GetDevice().Clear(Color(0.f, 0.f, 0.f));
 
     shaderProgram.Use();
@@ -135,6 +141,12 @@ void ConwayApplication::Render() {
     vao.Bind();
 
     drawcall.Draw();
+
+    auto renderEnd = Clock::now();
+
+    const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
+    renderFrameTimes[renderFrameIndex] = renderDuration;
+    renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
 
     imGui.BeginFrame();
     if (auto window = imGui.UseWindow("Game of Life Controls")) {
@@ -181,14 +193,44 @@ void ConwayApplication::Render() {
     }
 
     if (auto window = imGui.UseWindow("Performance Metrics")) {
+        ImGui::Spacing();
+        ImGui::Text("Frames Per Second");
         ImGui::PlotLines(
-            "Frame Time",
-            updateFrameRates.data(),
-            updateFrameRates.size(),
+            "",
+            frameRates.data(),
+            frameRates.size(),
             0,
             nullptr,
             0.0f,
-            800.0f,
+            std::min(*std::max_element(frameRates.begin(), frameRates.end()), 500.0f),
+            ImVec2(0, 160)
+        );
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Text("Update Frame Time (ms)");
+        ImGui::PlotLines(
+            "",
+            updateFrameTimes.data(),
+            updateFrameTimes.size(),
+            0,
+            nullptr,
+            0.0f,
+            *std::max_element(updateFrameTimes.begin(), updateFrameTimes.end()),
+            ImVec2(0, 80)
+        );
+
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Text("Render Frame Time (ms)");
+        ImGui::PlotLines(
+            "",
+            renderFrameTimes.data(),
+            renderFrameTimes.size(),
+            0,
+            nullptr,
+            0.0f,
+            *std::max_element(renderFrameTimes.begin(), renderFrameTimes.end()),
             ImVec2(0, 80)
         );
     }

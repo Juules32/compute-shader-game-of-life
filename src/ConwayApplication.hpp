@@ -46,9 +46,12 @@ private:
 
     float currentFrameTime = 0.0f;
 
+    int frameIndex = 0;
+    std::array<float, 2048> frameRates{};
+
     int updateFrameIndex = 0;
-    std::array<float, 2048> updateFrameRates{};
+    std::array<float, 2048> updateFrameTimes{};
 
     int renderFrameIndex = 0;
-    std::array<float, 2048> renderFrameRates{};
+    std::array<float, 2048> renderFrameTimes{};
 };
