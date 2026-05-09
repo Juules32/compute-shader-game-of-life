@@ -4,7 +4,7 @@
 #include <iosfwd>
 #include <iostream>
 #include <sstream>
-
+#include <array>
 #include "ituGL/shader/Shader.h"
 
 static void LoadAndCompileShader(Shader& shader, const char* path) {

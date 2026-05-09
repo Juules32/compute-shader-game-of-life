@@ -7,6 +7,7 @@
 #include <ituGL/geometry/VertexArrayObject.h>
 #include <ituGL/shader/ShaderProgram.h>
 #include <ituGL/geometry/Drawcall.h>
+#include <array>
 
 #include "GameOfLifeSimulation.hpp"
 #include "ituGL/utils/DearImGui.h"
@@ -21,6 +22,7 @@ private:
     void Render() override;
     void Cleanup() override;
 
+    void UpdateInput();
     void InitializeGeometry();
     void InitializeShaders();
     void UpdateSimulation();
@@ -41,6 +43,9 @@ private:
     bool uiPauseSimulation;
     bool uiPerformSingleStep;
     bool uiRandomGridGeneration;
+    Window::PressedState prevRightArrowState;
+    Window::PressedState prevEnterState;
+    Window::PressedState prevSpacebarState;
 
     std::unique_ptr<GameOfLifeSimulation> gameOfLife;
 

@@ -36,6 +36,8 @@ void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
     assert(y >= 0 && y < height);
 
     grid[y * width + x] = alive ? ALIVE : DEAD;
+
+    UpdateTexture();
 }
 
 bool CPUGameOfLifeSimulation::GetCell(int x, int y) {

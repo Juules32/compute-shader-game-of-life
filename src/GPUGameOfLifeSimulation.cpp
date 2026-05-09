@@ -65,8 +65,6 @@ void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
         GL_UNSIGNED_BYTE,
         &(alive ? ALIVE : DEAD)
     );
-
-    Texture2DObject::Unbind();
 }
 
 bool GPUGameOfLifeSimulation::GetCell(int x, int y) {

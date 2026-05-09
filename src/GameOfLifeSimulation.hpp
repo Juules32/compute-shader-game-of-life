@@ -25,6 +25,9 @@ public:
     virtual void SetWrapping(bool value);
     virtual bool GetWrapping();
     virtual const Texture2DObject& GetTexture() = 0;
+
+    int GetWidth() { return width; }
+    int GetHeight() { return height; }
 };
 
 enum SimulationType {

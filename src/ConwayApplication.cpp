@@ -81,12 +81,13 @@ void ConwayApplication::UpdateSimulation() {
 
 void ConwayApplication::Cleanup() {
     imGui.Cleanup();
-
     Application::Cleanup();
 }
 
 void ConwayApplication::Update() {
     Application::Update();
+
+    UpdateInput();
 
     bool updateGameOfLife = false;
     if (uiPerformSingleStep) {
@@ -125,8 +126,10 @@ void ConwayApplication::Update() {
         uiChangeIsWrapping.reset();
     }
 
-    frameRates[frameIndex] = 1.0f / GetDeltaTime();
-    frameIndex = (frameIndex + 1) % frameRates.size();
+    if (!uiPauseSimulation) {
+        frameRates[frameIndex] = 1.0f / GetDeltaTime();
+        frameIndex = (frameIndex + 1) % frameRates.size();
+    }
 }
 
 void ConwayApplication::Render() {
@@ -144,9 +147,11 @@ void ConwayApplication::Render() {
 
     auto renderEnd = Clock::now();
 
-    const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
-    renderFrameTimes[renderFrameIndex] = renderDuration;
-    renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
+    if (!uiPauseSimulation) {
+        const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
+        renderFrameTimes[renderFrameIndex] = renderDuration;
+        renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
+    }
 
     imGui.BeginFrame();
     if (auto window = imGui.UseWindow("Game of Life Controls")) {
@@ -236,6 +241,54 @@ void ConwayApplication::Render() {
     }
 
     imGui.EndFrame();
+}
+
+void ConwayApplication::UpdateInput() {
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        bool isLeftMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Left);
+        bool isRightMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right);
+
+        if (isLeftMouseButtonPressed || isRightMouseButtonPressed) {
+            bool value = isLeftMouseButtonPressed;
+
+            int windowWidth, windowHeight;
+            GetMainWindow().GetDimensions(windowWidth, windowHeight);
+
+            glm::vec2 mousePosition = GetMainWindow().GetMousePosition();
+            float mouseX = mousePosition.x;
+            float mouseY = mousePosition.y;
+
+            int gridWidth = gameOfLife->GetWidth();
+            int gridHeight = gameOfLife->GetHeight();
+            
+            int x = (mouseX / windowWidth) * gridWidth;
+            int y = (1.0f - mouseY / windowHeight) * gridHeight;
+
+            std::cout << x << " " << y << std::endl;
+
+            gameOfLife->SetCell(x, y, value);
+        }
+    }
+
+    if (!ImGui::GetIO().WantCaptureKeyboard) {
+        bool enterPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_ENTER);
+        bool rightArrowPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_RIGHT);
+        if (
+            (enterPressed && prevEnterState == Window::PressedState::Released) ||
+            (rightArrowPressed && prevRightArrowState == Window::PressedState::Released)
+        ) {
+            uiPerformSingleStep = true;
+        }
+
+        bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
+        if (spacebarPressed && prevSpacebarState == Window::PressedState::Released) {
+            uiPauseSimulation = !uiPauseSimulation;
+        }
+
+        prevEnterState = GetMainWindow().GetKeyState(GLFW_KEY_ENTER);
+        prevRightArrowState = GetMainWindow().GetKeyState(GLFW_KEY_RIGHT);
+        prevSpacebarState = GetMainWindow().GetKeyState(GLFW_KEY_SPACE);
+    }
 }
 
 void ConwayApplication::InitializeGeometry() {
