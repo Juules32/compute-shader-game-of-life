@@ -11,16 +11,17 @@ public:
     void Update() override;
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;
+    void SetWrapping(bool value) override;
     const Texture2DObject& GetTexture() override;
-    void SetWrapping(bool value);
 
 private:
-    void UpdateTexture();
+    void InitializeTextures(bool randomGridGeneration);
+    void InitializeShader();
 
+    ShaderProgram computeProgram;
+
+    bool flip = false;
     Texture2DObject textures[2];
     Texture2DObject* readTex = nullptr;
     Texture2DObject* writeTex = nullptr;
-
-    ShaderProgram computeProgram;
-    bool flip = false;
 };

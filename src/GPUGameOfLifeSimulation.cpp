@@ -8,59 +8,15 @@
 #include <iostream>
 
 void GPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridGeneration) {
-    Shader computeShader(Shader::ComputeShader);
-
-    LoadAndCompileShader(computeShader, "shaders/gameoflife.comp");
-
-    if (!computeProgram.Build(computeShader)) {
-        std::cout << "Failed to build compute shader\n";
-    }
-
-    computeProgram.Use();
-    computeProgram.SetUniform(
-        computeProgram.GetUniformLocation("isWrapping"),
-        isWrapping ? 1 : 0
-    );
-
     this->width = width;
     this->height = height;
 
-    std::vector<std::byte> grid = GenerateNewGrid(randomGridGeneration);
+    InitializeShader();
 
-    for (int i = 0; i < 2; i++) {
-        textures[i].Bind();
+    InitializeTextures(randomGridGeneration);
 
-        textures[i].SetImage<std::byte>(
-            0,
-            width,
-            height,
-            TextureObject::FormatR,
-            TextureObject::InternalFormatR8,
-            std::span(grid),
-            Data::Type::UByte
-        );
-
-        textures[i].SetParameter(TextureObject::ParameterEnum::MinFilter, GL_NEAREST);
-        textures[i].SetParameter(TextureObject::ParameterEnum::MagFilter, GL_NEAREST);
-
-        textures[i].SetParameter(
-            TextureObject::ParameterEnum::WrapS,
-            isWrapping ? GL_REPEAT : GL_CLAMP_TO_EDGE
-        );
-
-        textures[i].SetParameter(
-            TextureObject::ParameterEnum::WrapT,
-            isWrapping ? GL_REPEAT : GL_CLAMP_TO_EDGE
-        );
-    }
-
-    Texture2DObject::Unbind();
-
-    // pointer setup (start state)
-    readTex  = &textures[0];
-    writeTex = &textures[1];
+    SetWrapping(true);
 }
-
 
 void GPUGameOfLifeSimulation::Update() {
     computeProgram.Use();
@@ -85,9 +41,8 @@ void GPUGameOfLifeSimulation::Update() {
         GL_R8
     );
 
-    GLuint groupsX = (width + 7) / 8;
-    GLuint groupsY = (height + 7) / 8;
-
+    const GLuint groupsX = (width + 7) / 8;
+    const GLuint groupsY = (height + 7) / 8;
     glDispatchCompute(groupsX, groupsY, 1);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -97,8 +52,6 @@ void GPUGameOfLifeSimulation::Update() {
 }
 
 void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
-    std::byte value = alive ? ALIVE : DEAD;
-
     readTex->Bind();
 
     glTexSubImage2D(
@@ -110,7 +63,7 @@ void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
         1,
         GL_RED,
         GL_UNSIGNED_BYTE,
-        &value
+        &(alive ? ALIVE : DEAD)
     );
 
     Texture2DObject::Unbind();
@@ -120,10 +73,6 @@ bool GPUGameOfLifeSimulation::GetCell(int x, int y) {
     return false;
 }
 
-const Texture2DObject& GPUGameOfLifeSimulation::GetTexture() {
-    return *readTex;
-}
-
 void GPUGameOfLifeSimulation::SetWrapping(bool value) {
     isWrapping = value;
     computeProgram.Use();
@@ -131,4 +80,39 @@ void GPUGameOfLifeSimulation::SetWrapping(bool value) {
         computeProgram.GetUniformLocation("isWrapping"),
         isWrapping ? 1 : 0
     );
+}
+
+const Texture2DObject& GPUGameOfLifeSimulation::GetTexture() {
+    return *readTex;
+}
+
+void GPUGameOfLifeSimulation::InitializeTextures(bool randomGridGeneration) {
+    std::vector<std::byte> grid = GenerateNewGrid(randomGridGeneration);
+    for (int i = 0; i < 2; i++) {
+        textures[i].Bind();
+
+        textures[i].SetImage<std::byte>(
+            0,
+            width,
+            height,
+            TextureObject::FormatR,
+            TextureObject::InternalFormatR8,
+            std::span(grid),
+            Data::Type::UByte
+        );
+
+        textures[i].SetParameter(TextureObject::ParameterEnum::MinFilter, GL_NEAREST);
+        textures[i].SetParameter(TextureObject::ParameterEnum::MagFilter, GL_NEAREST);
+    }
+
+    readTex = &textures[0];
+    writeTex = &textures[1];
+}
+
+void GPUGameOfLifeSimulation::InitializeShader() {
+    Shader computeShader(Shader::ComputeShader);
+    LoadAndCompileShader(computeShader, "shaders/gameoflife.comp");
+    if (!computeProgram.Build(computeShader)) {
+        std::cout << "Failed to build compute shader\n";
+    }
 }

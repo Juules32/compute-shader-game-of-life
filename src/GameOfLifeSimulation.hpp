@@ -13,16 +13,18 @@ protected:
     int width = 0;
     int height = 0;
     bool isWrapping = true;
+
+    std::vector<std::byte> GenerateNewGrid(bool randomGridGeneration);
+
 public:
     virtual ~GameOfLifeSimulation() = default;
     virtual void Initialize(int width, int height, bool randomGridGeneration) = 0;
     virtual void Update() = 0;
     virtual void SetCell(int x, int y, bool alive) = 0;
     virtual bool GetCell(int x, int y) = 0;
+    virtual void SetWrapping(bool value);
+    virtual bool GetWrapping();
     virtual const Texture2DObject& GetTexture() = 0;
-    virtual void SetWrapping(bool value) = 0;
-    bool GetWrapping();
-    std::vector<std::byte> GenerateNewGrid(bool randomGridGeneration);
 };
 
 enum SimulationType {

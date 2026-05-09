@@ -1,4 +1,3 @@
-
 #include "GameOfLifeSimulation.hpp"
 
 #include <random>

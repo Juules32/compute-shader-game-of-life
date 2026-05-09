@@ -4,16 +4,16 @@
 #include <vector>
 
 class CPUGameOfLifeSimulation : public GameOfLifeSimulation {
-private:
+public:
     void Initialize(int width, int height, bool randomGridGeneration) override;
     void Update() override;
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;
     const Texture2DObject& GetTexture() override;
-    void SetWrapping(bool value) override;
 
-    void UpdateTexture();
+private:
     void UpdateGameOfLife();
+    void UpdateTexture();
     int CountNeighbors(int x, int y);
 
     std::vector<std::byte> grid;

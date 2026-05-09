@@ -1,8 +1,11 @@
 #include "ConwayApplication.hpp"
+
 #include "util.hpp"
 
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
+
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <random>
@@ -20,11 +23,13 @@ constexpr int INITIAL_WINDOW_HEIGHT = 720;
 constexpr int INITIAL_GRID_WIDTH = 32;
 constexpr int INITIAL_GRID_HEIGHT = 32;
 constexpr int MIN_GRID_SIZE = 32;
-constexpr int MAX_GRID_SIZE = 1024;
+constexpr int MAX_GRID_SIZE = 4096;
 
 constexpr float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
 constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 2000.0f;
 constexpr float MAX_GAME_OF_LIFE_UPDATE_RATE = 1.0f;
+
+using Clock = std::chrono::high_resolution_clock;
 
 struct Vertex {
     glm::vec2 position;
@@ -83,6 +88,7 @@ void ConwayApplication::Cleanup() {
 void ConwayApplication::Update() {
     Application::Update();
 
+
     if (uiPerformSingleStep) {
         gameOfLife->Update();
         uiPerformSingleStep = false;
@@ -90,7 +96,16 @@ void ConwayApplication::Update() {
         currentFrameTime += GetDeltaTime();
         if (!uiPauseSimulation && currentFrameTime >= uiGameOfLifeUpdateRate) {
             currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
+
+            auto updateStart = Clock::now();
+
             gameOfLife->Update();
+
+            auto updateEnd = Clock::now();
+
+            const float updateDuration = std::chrono::duration<float, std::milli>(updateEnd - updateStart).count();
+            updateFrameRates[updateFrameIndex] = 1000.0f / updateDuration;
+            updateFrameIndex = (updateFrameIndex + 1) % updateFrameRates.size();
         }
     }
 
@@ -107,6 +122,7 @@ void ConwayApplication::Update() {
         gameOfLife->SetWrapping(uiChangeIsWrapping.value());
         uiChangeIsWrapping.reset();
     }
+
 }
 
 void ConwayApplication::Render() {
@@ -152,21 +168,32 @@ void ConwayApplication::Render() {
             MAX_GAME_OF_LIFE_UPDATE_RATE
         );
 
+        bool isWrapping = gameOfLife->GetWrapping();
+        if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
+            uiChangeIsWrapping = isWrapping;
+        }
+
         ImGui::Checkbox("Pause Simulation", &uiPauseSimulation);
 
         if (uiPauseSimulation && ImGui::Button("Perform Single Step")) {
             uiPerformSingleStep = true;
         }
+    }
 
-        bool isWrapping = gameOfLife->GetWrapping();
-        if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
-            uiChangeIsWrapping = isWrapping;
-        }
+    if (auto window = imGui.UseWindow("Performance Metrics")) {
+        ImGui::PlotLines(
+            "Frame Time",
+            updateFrameRates.data(),
+            updateFrameRates.size(),
+            0,
+            nullptr,
+            0.0f,
+            800.0f,
+            ImVec2(0, 80)
+        );
     }
 
     imGui.EndFrame();
-
-    Application::Render();
 }
 
 void ConwayApplication::InitializeGeometry() {
@@ -186,20 +213,19 @@ void ConwayApplication::InitializeGeometry() {
 
     vbo.AllocateData(std::span(vertices, 6), BufferObject::Usage::StaticDraw);
 
-    constexpr GLsizei stride = sizeof(Vertex);
 
     vao.SetAttribute(
         0,
         VertexAttribute(Data::Type::Float, 2),
         offsetof(Vertex, position),
-        stride
+        sizeof(Vertex)
     );
 
     vao.SetAttribute(
         1,
         VertexAttribute(Data::Type::Float, 2),
         offsetof(Vertex, uv),
-        stride
+        sizeof(Vertex)
     );
 
     VertexArrayObject::Unbind();

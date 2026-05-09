@@ -13,43 +13,17 @@ void CPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridG
     UpdateTexture();
 
     gridTexture.Bind();
-
     gridTexture.SetParameter(
         TextureObject::ParameterEnum::MinFilter,
         GL_NEAREST
     );
-
     gridTexture.SetParameter(
         TextureObject::ParameterEnum::MagFilter,
         GL_NEAREST
     );
 
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapS,
-        GL_CLAMP_TO_EDGE
-    );
-
-    gridTexture.SetParameter(
-        TextureObject::ParameterEnum::WrapT,
-        GL_CLAMP_TO_EDGE
-    );
-}
-
-void CPUGameOfLifeSimulation::UpdateTexture() {
-    gridTexture.Bind();
-
     // Fixes alignment for widths not divisible by 4
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    gridTexture.SetImage<std::byte>(
-        0,
-        width,
-        height,
-        TextureObject::FormatR,
-        TextureObject::InternalFormatR8,
-        std::span(grid),
-        Data::Type::UByte
-    );
 }
 
 void CPUGameOfLifeSimulation::Update() {
@@ -57,23 +31,34 @@ void CPUGameOfLifeSimulation::Update() {
     UpdateTexture();
 }
 
+void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    grid[y * width + x] = alive ? ALIVE : DEAD;
+}
+
+bool CPUGameOfLifeSimulation::GetCell(int x, int y) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    return grid[y * width + x] == ALIVE;
+}
+
+const Texture2DObject& CPUGameOfLifeSimulation::GetTexture() {
+    return gridTexture;
+}
+
 void CPUGameOfLifeSimulation::UpdateGameOfLife() {
     std::vector<std::byte> newGrid(width * height, DEAD);
-
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            bool isSet = GetCell(x, y);
-            int neighbors = CountNeighbors(x, y);
-            int gridIndex = y * width + x;
+            const bool isSet = GetCell(x, y);
+            const int neighbors = CountNeighbors(x, y);
+            const int gridIndex = y * width + x;
             if (isSet) {
-                if (neighbors < 2) {
-                    newGrid[gridIndex] = DEAD;
-                }
                 if (neighbors == 2 || neighbors == 3) {
                     newGrid[gridIndex] = ALIVE;
-                }
-                if (neighbors > 3) {
-                    newGrid[gridIndex] = DEAD;
                 }
             } else {
                 if (neighbors == 3) {
@@ -83,8 +68,19 @@ void CPUGameOfLifeSimulation::UpdateGameOfLife() {
         }
     }
     grid = std::move(newGrid);
+}
 
-    // BUG: Doesn't update??
+void CPUGameOfLifeSimulation::UpdateTexture() {
+    gridTexture.Bind();
+    gridTexture.SetImage<std::byte>(
+        0,
+        width,
+        height,
+        TextureObject::FormatR,
+        TextureObject::InternalFormatR8,
+        std::span(grid),
+        Data::Type::UByte
+    );
 }
 
 int CPUGameOfLifeSimulation::CountNeighbors(int x, int y) {
@@ -112,26 +108,4 @@ int CPUGameOfLifeSimulation::CountNeighbors(int x, int y) {
         }
     }
     return count;
-}
-
-bool CPUGameOfLifeSimulation::GetCell(int x, int y) {
-    assert(x >= 0 && x < width);
-    assert(y >= 0 && y < height);
-
-    return grid[y * width + x] == ALIVE;
-}
-
-void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
-    assert(x >= 0 && x < width);
-    assert(y >= 0 && y < height);
-
-    grid[y * width + x] = alive ? ALIVE : DEAD;
-}
-
-const Texture2DObject& CPUGameOfLifeSimulation::GetTexture() {
-    return gridTexture;
-}
-
-void CPUGameOfLifeSimulation::SetWrapping(bool value) {
-    isWrapping = value;
 }

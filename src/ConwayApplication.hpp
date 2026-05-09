@@ -44,5 +44,11 @@ private:
 
     std::unique_ptr<GameOfLifeSimulation> gameOfLife;
 
-    float currentFrameTime{};
+    float currentFrameTime = 0.0f;
+
+    int updateFrameIndex = 0;
+    std::array<float, 2048> updateFrameRates{};
+
+    int renderFrameIndex = 0;
+    std::array<float, 2048> renderFrameRates{};
 };
