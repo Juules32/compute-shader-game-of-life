@@ -56,6 +56,7 @@ private:
     int uiGridHeight = INITIAL_GRID_HEIGHT;
     float uiGameOfLifeUpdateRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
     std::optional<bool> uiChangeIsWrapping = std::nullopt;
+    std::optional<bool> uiChangeIsTrailing = std::nullopt;
     bool uiRegenerateGrid = false;
     GameOfLifeImplementation uiGameOfLifeImplementation = GameOfLifeImplementation::CPU;
     bool uiPauseImplementation = false;

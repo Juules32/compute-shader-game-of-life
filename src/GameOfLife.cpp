@@ -10,15 +10,31 @@ bool GameOfLife::GetWrapping() {
     return isWrapping;
 }
 
-std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
-    std::vector<std::byte> grid(width * height, DEAD);
+void GameOfLife::SetTrailing(bool value) {
+    isTrailing = value;
+}
 
-    if (randomGridGeneration) {
-        // rand() makes patterns appear, so we use <random>
-        std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution dist(0, 1);
-        for (auto &cell : grid) {
-            cell = dist(rng) ? ALIVE : DEAD;
+bool GameOfLife::GetTrailing() {
+    return isTrailing;
+}
+
+std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
+    std::vector<std::byte> grid(width * height * 2);
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(0, 1);
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            size_t index = (y * width + x) * 2;
+
+            bool alive = randomGridGeneration ? dist(rng) : false;
+
+            // R channel
+            grid[index + 0] = alive ? ALIVE : DEAD;
+
+            // G channel
+            grid[index + 1] = alive ? ALIVE : DEAD;
         }
     }
 

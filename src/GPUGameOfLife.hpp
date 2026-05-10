@@ -13,6 +13,7 @@ public:
     bool GetCell(int x, int y) override;
     void SetWrapping(bool value) override;
     Texture2DObject& GetTexture() override;
+    void SetTrailing(bool value) override;
 
 private:
     void InitializeTextures(bool randomGridGeneration);

@@ -27,25 +27,57 @@ void CPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration)
 }
 
 void CPUGameOfLife::Step() {
-    std::vector<std::byte> newGrid(width * height, DEAD);
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            const bool isSet = GetCell(x, y);
+    std::vector<std::byte> newGrid(width * height * 2, DEAD);
+
+    const float decay = 0.95f;
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            const int index = (y * width + x) * 2;
+
+            const bool alive = GetCell(x, y);
             const int neighbors = CountNeighbors(x, y);
-            const int gridIndex = y * width + x;
-            if (isSet) {
-                if (neighbors == 2 || neighbors == 3) {
-                    newGrid[gridIndex] = ALIVE;
+
+            // Normalized previous trail value (0.0-1.0)
+            float prevTrail = static_cast<unsigned char>(grid[index + 1]) / 255.0f;
+
+            bool newAlive = false;
+
+            // Game of life rules
+            if (alive)
+            {
+                newAlive = (neighbors == 2 || neighbors == 3);
+            }
+            else
+            {
+                newAlive = (neighbors == 3);
+            }
+
+            // Trail logic
+            float trail;
+
+            if (isTrailing) {
+                trail = prevTrail * decay;
+                if (newAlive)
+                {
+                    trail = 1.0f;
                 }
             } else {
-                if (neighbors == 3) {
-                    newGrid[gridIndex] = ALIVE;
-                }
+                trail = 0.0f;
             }
+
+            // Write R (alive)
+            newGrid[index + 0] = newAlive ? ALIVE : DEAD;
+
+            // Write G (trail)
+            newGrid[index + 1] = static_cast<std::byte>(trail * 255.0f);
         }
     }
+
     grid = std::move(newGrid);
-    
+
     UpdateTexture();
 }
 
@@ -53,7 +85,8 @@ void CPUGameOfLife::SetCell(int x, int y, bool alive) {
     assert(x >= 0 && x < width);
     assert(y >= 0 && y < height);
 
-    grid[y * width + x] = alive ? ALIVE : DEAD;
+    grid[(y * width + x) * 2] = alive ? ALIVE : DEAD;
+    grid[(y * width + x) * 2 + 1] = alive ? ALIVE : DEAD;
 
     UpdateTexture();
 }
@@ -62,7 +95,7 @@ bool CPUGameOfLife::GetCell(int x, int y) {
     assert(x >= 0 && x < width);
     assert(y >= 0 && y < height);
 
-    return grid[y * width + x] == ALIVE;
+    return grid[(y * width + x) * 2] == ALIVE;
 }
 
 Texture2DObject& CPUGameOfLife::GetTexture() {
@@ -75,8 +108,8 @@ void CPUGameOfLife::UpdateTexture() {
         0,
         width,
         height,
-        TextureObject::FormatR,
-        TextureObject::InternalFormatR8,
+        TextureObject::FormatRG,
+        TextureObject::InternalFormatRG8,
         std::span(grid),
         Data::Type::UByte
     );

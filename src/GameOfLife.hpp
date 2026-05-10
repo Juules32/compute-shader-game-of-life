@@ -13,6 +13,7 @@ protected:
     int width = 0;
     int height = 0;
     bool isWrapping = true;
+    bool isTrailing = true;
 
     std::vector<std::byte> GenerateGrid(bool randomGridGeneration);
 
@@ -23,7 +24,8 @@ public:
     virtual void SetCell(int x, int y, bool alive) = 0;
     virtual bool GetCell(int x, int y) = 0;
     virtual Texture2DObject& GetTexture() = 0;
-    
+    virtual void SetTrailing(bool value);
+    virtual bool GetTrailing();
     virtual void SetWrapping(bool value);
     virtual bool GetWrapping();
 

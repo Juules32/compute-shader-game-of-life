@@ -93,7 +93,10 @@ void ConwayApplication::Update() {
         gameOfLife->SetWrapping(uiChangeIsWrapping.value());
         uiChangeIsWrapping.reset();
     }
-
+    if (uiChangeIsTrailing.has_value()) {
+        gameOfLife->SetTrailing(uiChangeIsTrailing.value());
+        uiChangeIsTrailing.reset();
+    }
     if (!uiPauseImplementation) {
         frameRates[frameIndex] = 1.0f / GetDeltaTime();
         frameIndex = (frameIndex + 1) % frameRates.size();
@@ -262,6 +265,13 @@ void ConwayApplication::RenderUI() {
         bool isWrapping = gameOfLife->GetWrapping();
         if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
             uiChangeIsWrapping = isWrapping;
+        }
+
+        ImGui::SameLine();
+
+        bool isTrailing = gameOfLife->GetTrailing();
+        if (ImGui::Checkbox("Enable Trailing", &isTrailing)) {
+            uiChangeIsTrailing = isTrailing;
         }
 
         ImGui::Checkbox("Pause Implementation", &uiPauseImplementation);

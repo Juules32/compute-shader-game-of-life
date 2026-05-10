@@ -16,6 +16,7 @@ void GPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration)
     InitializeTextures(randomGridGeneration);
 
     SetWrapping(true);
+    SetTrailing(true);
 }
 
 void GPUGameOfLife::Step() {
@@ -28,7 +29,7 @@ void GPUGameOfLife::Step() {
         GL_FALSE,
         0,
         GL_READ_ONLY,
-        GL_R8
+        GL_RG8
     );
 
     glBindImageTexture(
@@ -38,7 +39,7 @@ void GPUGameOfLife::Step() {
         GL_FALSE,
         0,
         GL_WRITE_ONLY,
-        GL_R8
+        GL_RG8
     );
 
     const GLuint groupsX = (width + 7) / 8;
@@ -53,7 +54,13 @@ void GPUGameOfLife::Step() {
 
 void GPUGameOfLife::SetCell(int x, int y, bool alive) {
     readTex->Bind();
+
     std::byte value = alive ? ALIVE : DEAD;
+    std::byte bytePair[2];
+
+    bytePair[0] = value; // R = state
+    bytePair[1] = value; // G = trail
+
     glTexSubImage2D(
         GL_TEXTURE_2D,
         0,
@@ -61,9 +68,9 @@ void GPUGameOfLife::SetCell(int x, int y, bool alive) {
         y,
         1,
         1,
-        GL_RED,
+        GL_RG,
         GL_UNSIGNED_BYTE,
-        &value
+        &bytePair
     );
 }
 
@@ -84,6 +91,15 @@ Texture2DObject& GPUGameOfLife::GetTexture() {
     return *readTex;
 }
 
+void GPUGameOfLife::SetTrailing(bool value) {
+    isTrailing = value;
+    computeProgram.Use();
+    computeProgram.SetUniform(
+        computeProgram.GetUniformLocation("isTrailing"),
+        value ? 1 : 0
+    );
+}
+
 void GPUGameOfLife::InitializeTextures(bool randomGridGeneration) {
     std::vector<std::byte> grid = GenerateGrid(randomGridGeneration);
     for (int i = 0; i < 2; i++) {
@@ -93,8 +109,8 @@ void GPUGameOfLife::InitializeTextures(bool randomGridGeneration) {
             0,
             width,
             height,
-            TextureObject::FormatR,
-            TextureObject::InternalFormatR8,
+            TextureObject::FormatRG,
+            TextureObject::InternalFormatRG8,
             std::span(grid),
             Data::Type::UByte
         );
