@@ -53,7 +53,7 @@ void GPUGameOfLifeSimulation::Update() {
 
 void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
     readTex->Bind();
-
+    std::byte value = alive ? ALIVE : DEAD;
     glTexSubImage2D(
         GL_TEXTURE_2D,
         0,
@@ -63,7 +63,7 @@ void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
         1,
         GL_RED,
         GL_UNSIGNED_BYTE,
-        &(alive ? ALIVE : DEAD)
+        &value
     );
 }
 

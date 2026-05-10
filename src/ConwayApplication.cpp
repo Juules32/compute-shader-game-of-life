@@ -15,20 +15,6 @@
 #include "CPUGameOfLifeSimulation.hpp"
 #include "GPUGameOfLifeSimulation.hpp"
 
-constexpr auto WINDOW_NAME = "Conway's Game of Life";
-
-constexpr int INITIAL_WINDOW_WIDTH = 720;
-constexpr int INITIAL_WINDOW_HEIGHT = 720;
-
-constexpr int INITIAL_GRID_WIDTH = 32;
-constexpr int INITIAL_GRID_HEIGHT = 32;
-constexpr int MIN_GRID_SIZE = 32;
-const int MAX_GRID_SIZE = static_cast<int>(std::pow(2, 13));
-
-constexpr float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
-constexpr float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 2000.0f;
-constexpr float MAX_GAME_OF_LIFE_UPDATE_RATE = 1.0f;
-
 using Clock = std::chrono::high_resolution_clock;
 
 struct Vertex {
@@ -37,18 +23,7 @@ struct Vertex {
 };
 
 ConwayApplication::ConwayApplication() :
-    Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME),
-    uiGridWidth(INITIAL_GRID_WIDTH),
-    uiGridHeight(INITIAL_GRID_HEIGHT),
-    uiGameOfLifeUpdateRate(INITIAL_GAME_OF_LIFE_UPDATE_RATE),
-    uiChangeIsWrapping(std::nullopt),
-    uiRegenerateGrid(true),
-    currentFrameTime(0),
-    uiRandomizeGridGeneration(false),
-    uiSimulationType(SimulationType::CPU),
-    uiPauseSimulation(false),
-    uiPerformSingleStep(false),
-    uiRandomGridGeneration(false)
+    Application(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, WINDOW_NAME)
 {}
 
 void ConwayApplication::Initialize() {
@@ -77,6 +52,12 @@ void ConwayApplication::UpdateSimulation() {
         gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
     }
     gameOfLife->Initialize(uiGridWidth, uiGridHeight, uiRandomGridGeneration);
+
+    shaderProgram.Use();
+    shaderProgram.SetUniform(
+        shaderProgram.GetUniformLocation("gridSize"),
+        glm::vec2(uiGridWidth, uiGridHeight)
+    );
 }
 
 void ConwayApplication::Cleanup() {
@@ -114,11 +95,6 @@ void ConwayApplication::Update() {
 
     if (uiRegenerateGrid) {
         UpdateSimulation();
-        shaderProgram.Use();
-        shaderProgram.SetUniform(
-            shaderProgram.GetUniformLocation("gridSize"),
-            glm::vec2(uiGridWidth, uiGridHeight)
-        );
         uiRegenerateGrid = false;
     }
     if (uiChangeIsWrapping.has_value()) {
@@ -134,23 +110,129 @@ void ConwayApplication::Update() {
 
 void ConwayApplication::Render() {
     auto renderStart = Clock::now();
-
-    GetDevice().Clear(Color(0.f, 0.f, 0.f));
-
-    shaderProgram.Use();
-
-    gameOfLife->GetTexture().Bind();
-
-    vao.Bind();
-
-    drawcall.Draw();
-
+    RenderGrid();
     auto renderEnd = Clock::now();
-
     if (!uiPauseSimulation) {
         const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
         renderFrameTimes[renderFrameIndex] = renderDuration;
         renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
+    }
+
+    RenderUI();
+}
+
+void ConwayApplication::UpdateInput() {
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        bool isLeftMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Left);
+        bool isRightMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right);
+
+        if (isLeftMouseButtonPressed || isRightMouseButtonPressed) {
+            bool value = isLeftMouseButtonPressed;
+
+            int windowWidth, windowHeight;
+            GetMainWindow().GetDimensions(windowWidth, windowHeight);
+
+            glm::vec2 mousePosition = GetMainWindow().GetMousePosition();
+            float mouseX = mousePosition.x;
+            float mouseY = mousePosition.y;
+
+            int gridWidth = gameOfLife->GetWidth();
+            int gridHeight = gameOfLife->GetHeight();
+            
+            int x = static_cast<int>((mouseX / windowWidth) * gridWidth);
+            int y = static_cast<int>((1.0f - mouseY / windowHeight) * gridHeight);
+
+            if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+                gameOfLife->SetCell(x, y, value);
+            }
+        }
+    }
+
+    if (!ImGui::GetIO().WantCaptureKeyboard) {
+        bool enterPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_ENTER);
+        bool rightArrowPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_RIGHT);
+        if (
+            (enterPressed && previousKeyStates[GLFW_KEY_ENTER] == Window::PressedState::Released) ||
+            (rightArrowPressed && previousKeyStates[GLFW_KEY_RIGHT] == Window::PressedState::Released)
+        ) {
+            uiPerformSingleStep = true;
+        }
+
+        bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
+        if (spacebarPressed && previousKeyStates[GLFW_KEY_SPACE] == Window::PressedState::Released) {
+            uiPauseSimulation = !uiPauseSimulation;
+        }
+        
+        bool f1Pressed = GetMainWindow().IsKeyPressed(GLFW_KEY_F1);
+        if (f1Pressed && previousKeyStates[GLFW_KEY_F1] == Window::PressedState::Released) {
+            hideUI = !hideUI;
+        }
+    }
+
+    for (auto& pair : previousKeyStates) {
+        pair.second = GetMainWindow().GetKeyState(pair.first);
+    }
+}
+
+void ConwayApplication::InitializeGeometry() {
+    Vertex vertices[] = {
+        { {-1.f, -1.f}, {0.f, 0.f} },
+        { { 1.f, -1.f}, {1.f, 0.f} },
+        { { 1.f,  1.f}, {1.f, 1.f} },
+
+        { {-1.f, -1.f}, {0.f, 0.f} },
+        { { 1.f,  1.f}, {1.f, 1.f} },
+        { {-1.f,  1.f}, {0.f, 1.f} },
+    };
+
+    vao.Bind();
+
+    vbo.Bind();
+
+    vbo.AllocateData(std::span(vertices, 6), BufferObject::Usage::StaticDraw);
+
+    vao.SetAttribute(
+        0,
+        VertexAttribute(Data::Type::Float, 2),
+        offsetof(Vertex, position),
+        sizeof(Vertex)
+    );
+
+    vao.SetAttribute(
+        1,
+        VertexAttribute(Data::Type::Float, 2),
+        offsetof(Vertex, uv),
+        sizeof(Vertex)
+    );
+
+    VertexArrayObject::Unbind();
+    VertexBufferObject::Unbind();
+
+    drawcall = Drawcall(Drawcall::Primitive::Triangles, 6, 0);
+}
+
+void ConwayApplication::InitializeShaders() {
+    Shader vertexShader(Shader::VertexShader);
+    LoadAndCompileShader(vertexShader, "shaders/fullscreen.vert");
+
+    Shader fragmentShader(Shader::FragmentShader);
+    LoadAndCompileShader(fragmentShader, "shaders/fullscreen.frag");
+
+    if (!shaderProgram.Build(vertexShader, fragmentShader)) {
+        std::cout << "Error linking shaders\n";
+    }
+}
+
+void ConwayApplication::RenderGrid() {
+    shaderProgram.Use();
+    gameOfLife->GetTexture().Bind();
+    vao.Bind();
+    drawcall.Draw();
+}
+
+void ConwayApplication::RenderUI() {
+    if (hideUI) {
+        return;
     }
 
     imGui.BeginFrame();
@@ -203,7 +285,7 @@ void ConwayApplication::Render() {
         ImGui::PlotLines(
             "",
             frameRates.data(),
-            frameRates.size(),
+            static_cast<int>(frameRates.size()),
             0,
             nullptr,
             0.0f,
@@ -217,7 +299,7 @@ void ConwayApplication::Render() {
         ImGui::PlotLines(
             "",
             updateFrameTimes.data(),
-            updateFrameTimes.size(),
+            static_cast<int>(updateFrameTimes.size()),
             0,
             nullptr,
             0.0f,
@@ -231,7 +313,7 @@ void ConwayApplication::Render() {
         ImGui::PlotLines(
             "",
             renderFrameTimes.data(),
-            renderFrameTimes.size(),
+            static_cast<int>(renderFrameTimes.size()),
             0,
             nullptr,
             0.0f,
@@ -241,103 +323,4 @@ void ConwayApplication::Render() {
     }
 
     imGui.EndFrame();
-}
-
-void ConwayApplication::UpdateInput() {
-    if (!ImGui::GetIO().WantCaptureMouse) {
-        bool isLeftMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Left);
-        bool isRightMouseButtonPressed = GetMainWindow().IsMouseButtonPressed(Window::MouseButton::Right);
-
-        if (isLeftMouseButtonPressed || isRightMouseButtonPressed) {
-            bool value = isLeftMouseButtonPressed;
-
-            int windowWidth, windowHeight;
-            GetMainWindow().GetDimensions(windowWidth, windowHeight);
-
-            glm::vec2 mousePosition = GetMainWindow().GetMousePosition();
-            float mouseX = mousePosition.x;
-            float mouseY = mousePosition.y;
-
-            int gridWidth = gameOfLife->GetWidth();
-            int gridHeight = gameOfLife->GetHeight();
-            
-            int x = (mouseX / windowWidth) * gridWidth;
-            int y = (1.0f - mouseY / windowHeight) * gridHeight;
-
-            std::cout << x << " " << y << std::endl;
-
-            gameOfLife->SetCell(x, y, value);
-        }
-    }
-
-    if (!ImGui::GetIO().WantCaptureKeyboard) {
-        bool enterPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_ENTER);
-        bool rightArrowPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_RIGHT);
-        if (
-            (enterPressed && prevEnterState == Window::PressedState::Released) ||
-            (rightArrowPressed && prevRightArrowState == Window::PressedState::Released)
-        ) {
-            uiPerformSingleStep = true;
-        }
-
-        bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
-        if (spacebarPressed && prevSpacebarState == Window::PressedState::Released) {
-            uiPauseSimulation = !uiPauseSimulation;
-        }
-
-        prevEnterState = GetMainWindow().GetKeyState(GLFW_KEY_ENTER);
-        prevRightArrowState = GetMainWindow().GetKeyState(GLFW_KEY_RIGHT);
-        prevSpacebarState = GetMainWindow().GetKeyState(GLFW_KEY_SPACE);
-    }
-}
-
-void ConwayApplication::InitializeGeometry() {
-    Vertex vertices[] = {
-        { {-1.f, -1.f}, {0.f, 0.f} },
-        { { 1.f, -1.f}, {1.f, 0.f} },
-        { { 1.f,  1.f}, {1.f, 1.f} },
-
-        { {-1.f, -1.f}, {0.f, 0.f} },
-        { { 1.f,  1.f}, {1.f, 1.f} },
-        { {-1.f,  1.f}, {0.f, 1.f} },
-    };
-
-    vao.Bind();
-
-    vbo.Bind();
-
-    vbo.AllocateData(std::span(vertices, 6), BufferObject::Usage::StaticDraw);
-
-
-    vao.SetAttribute(
-        0,
-        VertexAttribute(Data::Type::Float, 2),
-        offsetof(Vertex, position),
-        sizeof(Vertex)
-    );
-
-    vao.SetAttribute(
-        1,
-        VertexAttribute(Data::Type::Float, 2),
-        offsetof(Vertex, uv),
-        sizeof(Vertex)
-    );
-
-    VertexArrayObject::Unbind();
-    VertexBufferObject::Unbind();
-
-    drawcall = Drawcall(Drawcall::Primitive::Triangles, 6, 0);
-}
-
-// Load, compile and Build shaders
-void ConwayApplication::InitializeShaders() {
-    Shader vertexShader(Shader::VertexShader);
-    LoadAndCompileShader(vertexShader, "shaders/fullscreen.vert");
-
-    Shader fragmentShader(Shader::FragmentShader);
-    LoadAndCompileShader(fragmentShader, "shaders/fullscreen.frag");
-
-    if (!shaderProgram.Build(vertexShader, fragmentShader)) {
-        std::cout << "Error linking shaders\n";
-    }
 }
