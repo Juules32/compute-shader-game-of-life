@@ -1,4 +1,13 @@
-# How to build and run on Windows
+# compute-shader-game-of-life
+This is a project written in C++ with the purpose of demonstrating and measuring the power of parallelization in the form of compute shaders. Simulating [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) is a fitting use case, since each cell in the grid can update independently based on its current state and the state of its eight neighboring cells.
+
+The program was developed as part of a graphics programming course at the IT University of Copenhagen in 2026.
+
+## How to build and run on Windows
+Requirements:
+- A C++ compiler (tested with [GCC](https://gcc.gnu.org/))
+- [CMake](https://cmake.org/)
+
 From the repository root folder:
 ```
 cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
