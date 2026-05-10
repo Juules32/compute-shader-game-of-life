@@ -17,8 +17,8 @@
 using Clock = std::chrono::high_resolution_clock;
 
 struct Vertex {
-    glm::vec2 position;
-    glm::vec2 uv;
+    ImVec2 position;
+    ImVec2 uv;
 };
 
 ConwayApplication::ConwayApplication() :
@@ -68,7 +68,7 @@ void ConwayApplication::Update() {
         uiPerformSingleStep = false;
     } else {
         currentFrameTime += GetDeltaTime();
-        if (!uiPauseImplementation && currentFrameTime >= uiGameOfLifeUpdateRate) {
+        if (!uiPause && currentFrameTime >= uiGameOfLifeUpdateRate) {
             currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
             updateGameOfLife = true;
         }
@@ -97,7 +97,7 @@ void ConwayApplication::Update() {
         gameOfLife->SetTrailing(uiChangeIsTrailing.value());
         uiChangeIsTrailing.reset();
     }
-    if (!uiPauseImplementation) {
+    if (!uiPause) {
         frameRates[frameIndex] = 1.0f / GetDeltaTime();
         frameIndex = (frameIndex + 1) % frameRates.size();
     }
@@ -107,7 +107,7 @@ void ConwayApplication::Render() {
     auto renderStart = Clock::now();
     RenderGrid();
     auto renderEnd = Clock::now();
-    if (!uiPauseImplementation) {
+    if (!uiPause) {
         const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
         renderFrameTimes[renderFrameIndex] = renderDuration;
         renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
@@ -155,7 +155,7 @@ void ConwayApplication::UpdateInput() {
 
         bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
         if (spacebarPressed && previousKeyStates[GLFW_KEY_SPACE] == Window::PressedState::Released) {
-            uiPauseImplementation = !uiPauseImplementation;
+            uiPause = !uiPause;
         }
         
         bool f1Pressed = GetMainWindow().IsKeyPressed(GLFW_KEY_F1);
@@ -252,7 +252,7 @@ void ConwayApplication::RenderUI() {
         ImGui::Spacing();
         ImGui::Spacing();
 
-        ImGui::Text("Implementation Settings");
+        ImGui::Text("Settings");
         ImGui::Separator();
 
         ImGui::SliderFloat(
@@ -274,9 +274,9 @@ void ConwayApplication::RenderUI() {
             uiChangeIsTrailing = isTrailing;
         }
 
-        ImGui::Checkbox("Pause Implementation", &uiPauseImplementation);
+        ImGui::Checkbox("Pause Game", &uiPause);
 
-        if (uiPauseImplementation && ImGui::Button("Perform Single Step")) {
+        if (uiPause && ImGui::Button("Perform Single Step")) {
             uiPerformSingleStep = true;
         }
     }

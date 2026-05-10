@@ -59,7 +59,7 @@ private:
     std::optional<bool> uiChangeIsTrailing = std::nullopt;
     bool uiRegenerateGrid = false;
     GameOfLifeImplementation uiGameOfLifeImplementation = GameOfLifeImplementation::CPU;
-    bool uiPauseImplementation = false;
+    bool uiPause = false;
     bool uiPerformSingleStep = false;
     bool uiRandomGridGeneration = false;
     bool hideUI = false;
