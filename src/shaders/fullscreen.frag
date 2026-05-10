@@ -26,8 +26,7 @@ const float GLOW_STRENGTH = 1.0;
 // Alive color override
 const vec3 ALIVE_COLOR = vec3(0.3, 0.7, 1.0);
 
-void main()
-{
+void main() {
     vec2 data = texture(gridTexture, vUV).rg;
 
     float state = data.r;
@@ -35,8 +34,7 @@ void main()
 
     vec3 color;
 
-    if (state > 0.5)
-    {
+    if (state > 0.5) {
         FragColor = vec4(ALIVE_COLOR, 1.0);
         return;
     }

@@ -4,11 +4,10 @@
 
 #include "ituGL/texture/Texture2DObject.h"
 
-constexpr auto ALIVE = std::byte{255};
-constexpr auto DEAD = std::byte{0};
+const auto ALIVE = std::byte{255};
+const auto DEAD = std::byte{0};
 
-class GameOfLife
-{
+class GameOfLife {
 protected:
     int width = 0;
     int height = 0;

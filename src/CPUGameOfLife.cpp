@@ -31,10 +31,8 @@ void CPUGameOfLife::Step() {
 
     const float decay = 0.95f;
 
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
-        {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
             const int index = (y * width + x) * 2;
 
             const bool alive = GetCell(x, y);
@@ -46,12 +44,9 @@ void CPUGameOfLife::Step() {
             bool newAlive = false;
 
             // Game of life rules
-            if (alive)
-            {
+            if (alive) {
                 newAlive = (neighbors == 2 || neighbors == 3);
-            }
-            else
-            {
+            } else {
                 newAlive = (neighbors == 3);
             }
 
@@ -60,8 +55,7 @@ void CPUGameOfLife::Step() {
 
             if (isTrailing) {
                 trail = prevTrail * decay;
-                if (newAlive)
-                {
+                if (newAlive) {
                     trail = 1.0f;
                 }
             } else {
@@ -116,7 +110,7 @@ void CPUGameOfLife::UpdateTexture() {
 }
 
 int CPUGameOfLife::CountNeighbors(int x, int y) {
-    static constexpr int offsets[8][2] = {
+    static const int offsets[8][2] = {
         {-1, -1}, {0, -1}, {1, -1},
         {-1,  0},          {1,  0},
         {-1,  1}, {0,  1}, {1,  1}

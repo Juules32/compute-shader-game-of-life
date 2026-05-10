@@ -42,12 +42,12 @@ void ConwayApplication::Initialize() {
 }
 
 void ConwayApplication::UpdateImplementation() {
-    if (uiGameOfLifeImplementation == GameOfLifeImplementation::CPU) {
+    if (selectedGameImplementation == GameOfLifeImplementation::CPU) {
         gameOfLife = std::make_unique<CPUGameOfLife>();
     } else {
         gameOfLife = std::make_unique<GPUGameOfLife>();
     }
-    gameOfLife->Initialize(uiGridWidth, uiGridHeight, uiRandomGridGeneration);
+    gameOfLife->Initialize(sliderGridWidth, sliderGridHeight, selectedRandomGridGeneration);
 
     shaderProgram.Use();
 }
@@ -63,13 +63,13 @@ void ConwayApplication::Update() {
     UpdateInput();
 
     bool updateGameOfLife = false;
-    if (uiPerformSingleStep) {
+    if (performSingleStep) {
         updateGameOfLife = true;
-        uiPerformSingleStep = false;
+        performSingleStep = false;
     } else {
-        currentFrameTime += GetDeltaTime();
-        if (!uiPause && currentFrameTime >= uiGameOfLifeUpdateRate) {
-            currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
+        currentFrameDuration += GetDeltaTime();
+        if (!isPaused && currentFrameDuration >= gameUpdateRate) {
+            currentFrameDuration = remainderf(currentFrameDuration, gameUpdateRate);
             updateGameOfLife = true;
         }
     }
@@ -85,19 +85,19 @@ void ConwayApplication::Update() {
         updateFrameIndex = (updateFrameIndex + 1) % updateFrameTimes.size();
     }
 
-    if (uiRegenerateGrid) {
+    if (regenerateGrid) {
         UpdateImplementation();
-        uiRegenerateGrid = false;
+        regenerateGrid = false;
     }
-    if (uiChangeIsWrapping.has_value()) {
-        gameOfLife->SetWrapping(uiChangeIsWrapping.value());
-        uiChangeIsWrapping.reset();
+    if (changeIsWrapping.has_value()) {
+        gameOfLife->SetWrapping(changeIsWrapping.value());
+        changeIsWrapping.reset();
     }
-    if (uiChangeIsTrailing.has_value()) {
-        gameOfLife->SetTrailing(uiChangeIsTrailing.value());
-        uiChangeIsTrailing.reset();
+    if (changeIsTrailing.has_value()) {
+        gameOfLife->SetTrailing(changeIsTrailing.value());
+        changeIsTrailing.reset();
     }
-    if (!uiPause) {
+    if (!isPaused) {
         frameRates[frameIndex] = 1.0f / GetDeltaTime();
         frameIndex = (frameIndex + 1) % frameRates.size();
     }
@@ -107,7 +107,7 @@ void ConwayApplication::Render() {
     auto renderStart = Clock::now();
     RenderGrid();
     auto renderEnd = Clock::now();
-    if (!uiPause) {
+    if (!isPaused) {
         const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
         renderFrameTimes[renderFrameIndex] = renderDuration;
         renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
@@ -150,17 +150,17 @@ void ConwayApplication::UpdateInput() {
             (enterPressed && previousKeyStates[GLFW_KEY_ENTER] == Window::PressedState::Released) ||
             (rightArrowPressed && previousKeyStates[GLFW_KEY_RIGHT] == Window::PressedState::Released)
         ) {
-            uiPerformSingleStep = true;
+            performSingleStep = true;
         }
 
         bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
         if (spacebarPressed && previousKeyStates[GLFW_KEY_SPACE] == Window::PressedState::Released) {
-            uiPause = !uiPause;
+            isPaused = !isPaused;
         }
         
         bool f1Pressed = GetMainWindow().IsKeyPressed(GLFW_KEY_F1);
         if (f1Pressed && previousKeyStates[GLFW_KEY_F1] == Window::PressedState::Released) {
-            hideUI = !hideUI;
+            isUIHidden = !isUIHidden;
         }
     }
 
@@ -226,58 +226,57 @@ void ConwayApplication::RenderGrid() {
 }
 
 void ConwayApplication::RenderUI() {
-    if (hideUI) {
+    if (isUIHidden) {
         return;
     }
 
     imGui.BeginFrame();
-    if (auto window = imGui.UseWindow("Game of Life Controls")) {
-
+    if (auto window = imGui.UseWindow("Game of Life Settings")) {
         ImGui::Text("Grid Generation");
         ImGui::Separator();
 
-        ImGui::SliderInt("Width", &uiGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
-        ImGui::SliderInt("Height", &uiGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderInt("Width", &sliderGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderInt("Height", &sliderGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
-        ImGui::RadioButton("Single Threaded Implementation", (int*)&uiGameOfLifeImplementation, CPU);
+        ImGui::RadioButton("Single Threaded Implementation", (int*)&selectedGameImplementation, CPU);
         ImGui::SameLine();
-        ImGui::RadioButton("Compute Shader Implementation", (int*)&uiGameOfLifeImplementation, GPU);
+        ImGui::RadioButton("Compute Shader Implementation", (int*)&selectedGameImplementation, GPU);
 
-        ImGui::Checkbox("Random Grid Generation", &uiRandomGridGeneration);
+        ImGui::Checkbox("Random Grid Generation", &selectedRandomGridGeneration);
 
         if (ImGui::Button("Regenerate")) {
-            uiRegenerateGrid = true;
+            regenerateGrid = true;
         }
 
         ImGui::Spacing();
         ImGui::Spacing();
 
-        ImGui::Text("Settings");
+        ImGui::Text("Other Settings");
         ImGui::Separator();
 
         ImGui::SliderFloat(
             "Update Rate",
-            &uiGameOfLifeUpdateRate,
+            &gameUpdateRate,
             MIN_GAME_OF_LIFE_UPDATE_RATE,
             MAX_GAME_OF_LIFE_UPDATE_RATE
         );
 
         bool isWrapping = gameOfLife->GetWrapping();
         if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
-            uiChangeIsWrapping = isWrapping;
+            changeIsWrapping = isWrapping;
         }
 
         ImGui::SameLine();
 
         bool isTrailing = gameOfLife->GetTrailing();
         if (ImGui::Checkbox("Enable Trailing", &isTrailing)) {
-            uiChangeIsTrailing = isTrailing;
+            changeIsTrailing = isTrailing;
         }
 
-        ImGui::Checkbox("Pause Game", &uiPause);
+        ImGui::Checkbox("Pause Game", &isPaused);
 
-        if (uiPause && ImGui::Button("Perform Single Step")) {
-            uiPerformSingleStep = true;
+        if (isPaused && ImGui::Button("Perform Single Step")) {
+            performSingleStep = true;
         }
     }
 
