@@ -38,10 +38,7 @@ void ConwayApplication::Initialize() {
 
     shaderProgram.Use();
 
-    shaderProgram.SetUniform(
-        shaderProgram.GetUniformLocation("gridTexture"),
-        0
-    );
+    shaderProgram.SetUniform(shaderProgram.GetUniformLocation("gridTexture"), 0);
 }
 
 void ConwayApplication::UpdateImplementation() {
@@ -53,10 +50,6 @@ void ConwayApplication::UpdateImplementation() {
     gameOfLife->Initialize(uiGridWidth, uiGridHeight, uiRandomGridGeneration);
 
     shaderProgram.Use();
-    shaderProgram.SetUniform(
-        shaderProgram.GetUniformLocation("gridSize"),
-        glm::vec2(uiGridWidth, uiGridHeight)
-    );
 }
 
 void ConwayApplication::Cleanup() {

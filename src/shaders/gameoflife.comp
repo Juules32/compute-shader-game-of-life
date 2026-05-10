@@ -12,12 +12,12 @@ const float ALIVE_THRESHOLD = 0.5;
 int GetCell(ivec2 pos, ivec2 size) {
     if (isWrapping == 1) {
         pos = (pos + size) % size;
-        return imageLoad(currentGrid, pos).r < ALIVE_THRESHOLD ? 1 : 0;
+        return imageLoad(currentGrid, pos).r > ALIVE_THRESHOLD ? 1 : 0;
     } else {
         if (pos.x < 0 || pos.y < 0 || pos.x >= size.x || pos.y >= size.y) {
             return 0;
         }
-        return imageLoad(currentGrid, pos).r < ALIVE_THRESHOLD ? 1 : 0;
+        return imageLoad(currentGrid, pos).r > ALIVE_THRESHOLD ? 1 : 0;
     }
 }
 
@@ -53,5 +53,5 @@ void main()
         result = 1;
     }
 
-    imageStore(nextGrid, pos, vec4(1 - result, 0, 0, 1));
+    imageStore(nextGrid, pos, vec4(result, 0, 0, 1));
 }
