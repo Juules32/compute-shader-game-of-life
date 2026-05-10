@@ -1,16 +1,16 @@
-#include "GameOfLifeSimulation.hpp"
+#include "GameOfLife.hpp"
 
 #include <random>
 
-void GameOfLifeSimulation::SetWrapping(bool value) {
+void GameOfLife::SetWrapping(bool value) {
     isWrapping = value;
 }
 
-bool GameOfLifeSimulation::GetWrapping() {
+bool GameOfLife::GetWrapping() {
     return isWrapping;
 }
 
-std::vector<std::byte> GameOfLifeSimulation::GenerateNewGrid(bool randomGridGeneration) {
+std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
     std::vector<std::byte> grid(width * height, DEAD);
 
     if (randomGridGeneration) {
@@ -23,4 +23,12 @@ std::vector<std::byte> GameOfLifeSimulation::GenerateNewGrid(bool randomGridGene
     }
 
     return grid;
+}
+
+int GameOfLife::GetWidth() {
+    return width;
+}
+
+int GameOfLife::GetHeight() {
+    return height;
 }

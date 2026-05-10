@@ -7,30 +7,31 @@
 constexpr auto ALIVE = std::byte{0};
 constexpr auto DEAD = std::byte{255};
 
-class GameOfLifeSimulation
+class GameOfLife
 {
 protected:
     int width = 0;
     int height = 0;
     bool isWrapping = true;
 
-    std::vector<std::byte> GenerateNewGrid(bool randomGridGeneration);
+    std::vector<std::byte> GenerateGrid(bool randomGridGeneration);
 
 public:
-    virtual ~GameOfLifeSimulation() = default;
+    virtual ~GameOfLife() = default;
     virtual void Initialize(int width, int height, bool randomGridGeneration) = 0;
-    virtual void Update() = 0;
+    virtual void Step() = 0;
     virtual void SetCell(int x, int y, bool alive) = 0;
     virtual bool GetCell(int x, int y) = 0;
+    virtual Texture2DObject& GetTexture() = 0;
+    
     virtual void SetWrapping(bool value);
     virtual bool GetWrapping();
-    virtual const Texture2DObject& GetTexture() = 0;
 
-    int GetWidth() { return width; }
-    int GetHeight() { return height; }
+    int GetWidth();
+    int GetHeight();
 };
 
-enum SimulationType {
+enum GameOfLifeImplementation {
     CPU,
     GPU,
 };

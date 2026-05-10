@@ -1,4 +1,4 @@
-#include "GPUGameOfLifeSimulation.hpp"
+#include "GPUGameOfLife.hpp"
 #include "util.hpp"
 
 #include <ituGL/shader/Shader.h>
@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 
-void GPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridGeneration) {
+void GPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration) {
     this->width = width;
     this->height = height;
 
@@ -18,7 +18,7 @@ void GPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridG
     SetWrapping(true);
 }
 
-void GPUGameOfLifeSimulation::Update() {
+void GPUGameOfLife::Step() {
     computeProgram.Use();
 
     glBindImageTexture(
@@ -51,7 +51,7 @@ void GPUGameOfLifeSimulation::Update() {
     std::swap(readTex, writeTex);
 }
 
-void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
+void GPUGameOfLife::SetCell(int x, int y, bool alive) {
     readTex->Bind();
     std::byte value = alive ? ALIVE : DEAD;
     glTexSubImage2D(
@@ -67,11 +67,11 @@ void GPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
     );
 }
 
-bool GPUGameOfLifeSimulation::GetCell(int x, int y) {
+bool GPUGameOfLife::GetCell(int x, int y) {
     return false;
 }
 
-void GPUGameOfLifeSimulation::SetWrapping(bool value) {
+void GPUGameOfLife::SetWrapping(bool value) {
     isWrapping = value;
     computeProgram.Use();
     computeProgram.SetUniform(
@@ -80,12 +80,12 @@ void GPUGameOfLifeSimulation::SetWrapping(bool value) {
     );
 }
 
-const Texture2DObject& GPUGameOfLifeSimulation::GetTexture() {
+Texture2DObject& GPUGameOfLife::GetTexture() {
     return *readTex;
 }
 
-void GPUGameOfLifeSimulation::InitializeTextures(bool randomGridGeneration) {
-    std::vector<std::byte> grid = GenerateNewGrid(randomGridGeneration);
+void GPUGameOfLife::InitializeTextures(bool randomGridGeneration) {
+    std::vector<std::byte> grid = GenerateGrid(randomGridGeneration);
     for (int i = 0; i < 2; i++) {
         textures[i].Bind();
 
@@ -107,7 +107,7 @@ void GPUGameOfLifeSimulation::InitializeTextures(bool randomGridGeneration) {
     writeTex = &textures[1];
 }
 
-void GPUGameOfLifeSimulation::InitializeShader() {
+void GPUGameOfLife::InitializeShader() {
     Shader computeShader(Shader::ComputeShader);
     LoadAndCompileShader(computeShader, "shaders/gameoflife.comp");
     if (!computeProgram.Build(computeShader)) {

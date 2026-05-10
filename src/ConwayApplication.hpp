@@ -10,7 +10,7 @@
 #include <array>
 #include <unordered_map>
 
-#include "GameOfLifeSimulation.hpp"
+#include "GameOfLife.hpp"
 #include "ituGL/utils/DearImGui.h"
 
 constexpr auto WINDOW_NAME = "Conway's Game of Life";
@@ -42,7 +42,7 @@ private:
     void UpdateInput();
     void InitializeGeometry();
     void InitializeShaders();
-    void UpdateSimulation();
+    void UpdateImplementation();
     void RenderGrid();
     void RenderUI();
 
@@ -57,8 +57,8 @@ private:
     float uiGameOfLifeUpdateRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
     std::optional<bool> uiChangeIsWrapping = std::nullopt;
     bool uiRegenerateGrid = false;
-    SimulationType uiSimulationType = SimulationType::CPU;
-    bool uiPauseSimulation = false;
+    GameOfLifeImplementation uiGameOfLifeImplementation = GameOfLifeImplementation::CPU;
+    bool uiPauseImplementation = false;
     bool uiPerformSingleStep = false;
     bool uiRandomGridGeneration = false;
     bool hideUI = false;
@@ -69,7 +69,7 @@ private:
         {GLFW_KEY_F1, Window::PressedState::Released},
     };
 
-    std::unique_ptr<GameOfLifeSimulation> gameOfLife;
+    std::unique_ptr<GameOfLife> gameOfLife;
 
     float currentFrameTime = 0.0f;
 

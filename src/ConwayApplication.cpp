@@ -1,5 +1,6 @@
 #include "ConwayApplication.hpp"
-
+#include "CPUGameOfLife.hpp"
+#include "GPUGameOfLife.hpp"
 #include "util.hpp"
 
 #include <ituGL/shader/Shader.h>
@@ -12,8 +13,6 @@
 #include <vector>
 #include <imgui.h>
 
-#include "CPUGameOfLifeSimulation.hpp"
-#include "GPUGameOfLifeSimulation.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -35,7 +34,7 @@ void ConwayApplication::Initialize() {
 
     InitializeShaders();
 
-    UpdateSimulation();
+    UpdateImplementation();
 
     shaderProgram.Use();
 
@@ -45,11 +44,11 @@ void ConwayApplication::Initialize() {
     );
 }
 
-void ConwayApplication::UpdateSimulation() {
-    if (uiSimulationType == SimulationType::CPU) {
-        gameOfLife = std::make_unique<CPUGameOfLifeSimulation>();
+void ConwayApplication::UpdateImplementation() {
+    if (uiGameOfLifeImplementation == GameOfLifeImplementation::CPU) {
+        gameOfLife = std::make_unique<CPUGameOfLife>();
     } else {
-        gameOfLife = std::make_unique<GPUGameOfLifeSimulation>();
+        gameOfLife = std::make_unique<GPUGameOfLife>();
     }
     gameOfLife->Initialize(uiGridWidth, uiGridHeight, uiRandomGridGeneration);
 
@@ -76,7 +75,7 @@ void ConwayApplication::Update() {
         uiPerformSingleStep = false;
     } else {
         currentFrameTime += GetDeltaTime();
-        if (!uiPauseSimulation && currentFrameTime >= uiGameOfLifeUpdateRate) {
+        if (!uiPauseImplementation && currentFrameTime >= uiGameOfLifeUpdateRate) {
             currentFrameTime = remainderf(currentFrameTime, uiGameOfLifeUpdateRate);
             updateGameOfLife = true;
         }
@@ -84,7 +83,7 @@ void ConwayApplication::Update() {
     if (updateGameOfLife) {
         auto updateStart = Clock::now();
 
-        gameOfLife->Update();
+        gameOfLife->Step();
 
         auto updateEnd = Clock::now();
 
@@ -94,7 +93,7 @@ void ConwayApplication::Update() {
     }
 
     if (uiRegenerateGrid) {
-        UpdateSimulation();
+        UpdateImplementation();
         uiRegenerateGrid = false;
     }
     if (uiChangeIsWrapping.has_value()) {
@@ -102,7 +101,7 @@ void ConwayApplication::Update() {
         uiChangeIsWrapping.reset();
     }
 
-    if (!uiPauseSimulation) {
+    if (!uiPauseImplementation) {
         frameRates[frameIndex] = 1.0f / GetDeltaTime();
         frameIndex = (frameIndex + 1) % frameRates.size();
     }
@@ -112,7 +111,7 @@ void ConwayApplication::Render() {
     auto renderStart = Clock::now();
     RenderGrid();
     auto renderEnd = Clock::now();
-    if (!uiPauseSimulation) {
+    if (!uiPauseImplementation) {
         const float renderDuration = std::chrono::duration<float, std::milli>(renderEnd - renderStart).count();
         renderFrameTimes[renderFrameIndex] = renderDuration;
         renderFrameIndex = (renderFrameIndex + 1) % renderFrameTimes.size();
@@ -160,7 +159,7 @@ void ConwayApplication::UpdateInput() {
 
         bool spacebarPressed = GetMainWindow().IsKeyPressed(GLFW_KEY_SPACE);
         if (spacebarPressed && previousKeyStates[GLFW_KEY_SPACE] == Window::PressedState::Released) {
-            uiPauseSimulation = !uiPauseSimulation;
+            uiPauseImplementation = !uiPauseImplementation;
         }
         
         bool f1Pressed = GetMainWindow().IsKeyPressed(GLFW_KEY_F1);
@@ -244,9 +243,9 @@ void ConwayApplication::RenderUI() {
         ImGui::SliderInt("Width", &uiGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
         ImGui::SliderInt("Height", &uiGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
-        ImGui::RadioButton("Single Threaded Simulation", (int*)&uiSimulationType, CPU);
+        ImGui::RadioButton("Single Threaded Implementation", (int*)&uiGameOfLifeImplementation, CPU);
         ImGui::SameLine();
-        ImGui::RadioButton("Compute Shader Simulation", (int*)&uiSimulationType, GPU);
+        ImGui::RadioButton("Compute Shader Implementation", (int*)&uiGameOfLifeImplementation, GPU);
 
         ImGui::Checkbox("Random Grid Generation", &uiRandomGridGeneration);
 
@@ -257,7 +256,7 @@ void ConwayApplication::RenderUI() {
         ImGui::Spacing();
         ImGui::Spacing();
 
-        ImGui::Text("Simulation Settings");
+        ImGui::Text("Implementation Settings");
         ImGui::Separator();
 
         ImGui::SliderFloat(
@@ -272,9 +271,9 @@ void ConwayApplication::RenderUI() {
             uiChangeIsWrapping = isWrapping;
         }
 
-        ImGui::Checkbox("Pause Simulation", &uiPauseSimulation);
+        ImGui::Checkbox("Pause Implementation", &uiPauseImplementation);
 
-        if (uiPauseSimulation && ImGui::Button("Perform Single Step")) {
+        if (uiPauseImplementation && ImGui::Button("Perform Single Step")) {
             uiPerformSingleStep = true;
         }
     }

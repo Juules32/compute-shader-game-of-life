@@ -1,18 +1,18 @@
 #pragma once
 
-#include "GameOfLifeSimulation.hpp"
+#include "GameOfLife.hpp"
 #include <vector>
 
 #include "ituGL/shader/ShaderProgram.h"
 
-class GPUGameOfLifeSimulation : public GameOfLifeSimulation {
+class GPUGameOfLife : public GameOfLife {
 public:
     void Initialize(int width, int height, bool randomGridGeneration) override;
-    void Update() override;
+    void Step() override;
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;
     void SetWrapping(bool value) override;
-    const Texture2DObject& GetTexture() override;
+    Texture2DObject& GetTexture() override;
 
 private:
     void InitializeTextures(bool randomGridGeneration);

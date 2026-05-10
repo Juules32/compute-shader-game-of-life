@@ -1,14 +1,14 @@
-#include "CPUGameOfLifeSimulation.hpp"
+#include "CPUGameOfLife.hpp"
 
 #include <random>
 #include <vector>
 #include <cassert>
 
-void CPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridGeneration) {
+void CPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration) {
     this->width = width;
     this->height = height;
 
-    grid = GenerateNewGrid(randomGridGeneration);
+    grid = GenerateGrid(randomGridGeneration);
 
     UpdateTexture();
 
@@ -26,32 +26,7 @@ void CPUGameOfLifeSimulation::Initialize(int width, int height, bool randomGridG
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
-void CPUGameOfLifeSimulation::Update() {
-    UpdateGameOfLife();
-    UpdateTexture();
-}
-
-void CPUGameOfLifeSimulation::SetCell(int x, int y, bool alive) {
-    assert(x >= 0 && x < width);
-    assert(y >= 0 && y < height);
-
-    grid[y * width + x] = alive ? ALIVE : DEAD;
-
-    UpdateTexture();
-}
-
-bool CPUGameOfLifeSimulation::GetCell(int x, int y) {
-    assert(x >= 0 && x < width);
-    assert(y >= 0 && y < height);
-
-    return grid[y * width + x] == ALIVE;
-}
-
-const Texture2DObject& CPUGameOfLifeSimulation::GetTexture() {
-    return gridTexture;
-}
-
-void CPUGameOfLifeSimulation::UpdateGameOfLife() {
+void CPUGameOfLife::Step() {
     std::vector<std::byte> newGrid(width * height, DEAD);
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
@@ -70,9 +45,31 @@ void CPUGameOfLifeSimulation::UpdateGameOfLife() {
         }
     }
     grid = std::move(newGrid);
+    
+    UpdateTexture();
 }
 
-void CPUGameOfLifeSimulation::UpdateTexture() {
+void CPUGameOfLife::SetCell(int x, int y, bool alive) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    grid[y * width + x] = alive ? ALIVE : DEAD;
+
+    UpdateTexture();
+}
+
+bool CPUGameOfLife::GetCell(int x, int y) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    return grid[y * width + x] == ALIVE;
+}
+
+Texture2DObject& CPUGameOfLife::GetTexture() {
+    return gridTexture;
+}
+
+void CPUGameOfLife::UpdateTexture() {
     gridTexture.Bind();
     gridTexture.SetImage<std::byte>(
         0,
@@ -85,7 +82,7 @@ void CPUGameOfLifeSimulation::UpdateTexture() {
     );
 }
 
-int CPUGameOfLifeSimulation::CountNeighbors(int x, int y) {
+int CPUGameOfLife::CountNeighbors(int x, int y) {
     static constexpr int offsets[8][2] = {
         {-1, -1}, {0, -1}, {1, -1},
         {-1,  0},          {1,  0},
