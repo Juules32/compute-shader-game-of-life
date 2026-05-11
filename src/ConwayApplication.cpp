@@ -67,9 +67,9 @@ void ConwayApplication::Update() {
         updateGameOfLife = true;
         performSingleStep = false;
     } else {
-        currentFrameDuration += GetDeltaTime();
-        if (!isPaused && currentFrameDuration >= gameUpdateRate) {
-            currentFrameDuration = remainderf(currentFrameDuration, gameUpdateRate);
+        currentStepDuration += GetDeltaTime();
+        if (!isPaused && currentStepDuration >= gameStepRate) {
+            currentStepDuration = remainderf(currentStepDuration, gameStepRate);
             updateGameOfLife = true;
         }
     }
@@ -81,8 +81,8 @@ void ConwayApplication::Update() {
         auto updateEnd = Clock::now();
 
         const float updateDuration = std::chrono::duration<float, std::milli>(updateEnd - updateStart).count();
-        updateFrameTimes[updateFrameIndex] = updateDuration;
-        updateFrameIndex = (updateFrameIndex + 1) % updateFrameTimes.size();
+        stepFrameTimes[stepFrameIndex] = updateDuration;
+        stepFrameIndex = (stepFrameIndex + 1) % stepFrameTimes.size();
     }
 
     if (regenerateGrid) {
@@ -235,8 +235,8 @@ void ConwayApplication::RenderUI() {
         ImGui::Text("Grid Generation");
         ImGui::Separator();
 
-        ImGui::SliderInt("Width", &sliderGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
-        ImGui::SliderInt("Height", &sliderGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderInt("Grid Width", &sliderGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
+        ImGui::SliderInt("Grid Height", &sliderGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
         ImGui::RadioButton("Single Threaded Implementation", (int*)&selectedGameImplementation, CPU);
         ImGui::SameLine();
@@ -255,8 +255,8 @@ void ConwayApplication::RenderUI() {
         ImGui::Separator();
 
         ImGui::SliderFloat(
-            "Update Rate",
-            &gameUpdateRate,
+            "Step Rate",
+            &gameStepRate,
             MIN_GAME_OF_LIFE_UPDATE_RATE,
             MAX_GAME_OF_LIFE_UPDATE_RATE
         );
@@ -296,15 +296,15 @@ void ConwayApplication::RenderUI() {
 
         ImGui::Spacing();
         ImGui::Spacing();
-        ImGui::Text("Update Frame Time (ms)");
+        ImGui::Text("Step Frame Time (ms)");
         ImGui::PlotLines(
             "",
-            updateFrameTimes.data(),
-            static_cast<int>(updateFrameTimes.size()),
+            stepFrameTimes.data(),
+            static_cast<int>(stepFrameTimes.size()),
             0,
             nullptr,
             0.0f,
-            *std::max_element(updateFrameTimes.begin(), updateFrameTimes.end()),
+            *std::max_element(stepFrameTimes.begin(), stepFrameTimes.end()),
             ImVec2(0, 80)
         );
 

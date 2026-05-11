@@ -53,7 +53,7 @@ private:
 
     std::unique_ptr<GameOfLife> gameOfLife;
 
-    float currentFrameDuration = 0.0f;
+    float currentStepDuration = 0.0f;
 
     std::unordered_map<int, Window::PressedState> previousKeyStates = {
         {GLFW_KEY_RIGHT, Window::PressedState::Released},
@@ -65,7 +65,7 @@ private:
     // UI State
     int sliderGridWidth = INITIAL_GRID_WIDTH;
     int sliderGridHeight = INITIAL_GRID_HEIGHT;
-    float gameUpdateRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
+    float gameStepRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
     
     GameOfLifeImplementation selectedGameImplementation = GameOfLifeImplementation::CPU;
     bool isPaused = false;
@@ -80,8 +80,8 @@ private:
 
     int frameIndex = 0;
     std::array<float, FRAME_BUFFER_SIZE> frameRates{};
-    int updateFrameIndex = 0;
-    std::array<float, FRAME_BUFFER_SIZE> updateFrameTimes{};
+    int stepFrameIndex = 0;
+    std::array<float, FRAME_BUFFER_SIZE> stepFrameTimes{};
     int renderFrameIndex = 0;
     std::array<float, FRAME_BUFFER_SIZE> renderFrameTimes{};
 };
