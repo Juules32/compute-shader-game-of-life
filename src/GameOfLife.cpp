@@ -1,5 +1,4 @@
 #include "GameOfLife.hpp"
-
 #include <random>
 
 void GameOfLife::SetWrapping(bool value) {
@@ -27,14 +26,9 @@ std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             size_t index = (y * width + x) * 2;
-
             bool alive = randomGridGeneration ? dist(rng) : false;
-
-            // R channel
-            grid[index + 0] = alive ? ALIVE : DEAD;
-
-            // G channel
-            grid[index + 1] = alive ? ALIVE : DEAD;
+            grid[index + 0] = alive ? ALIVE : DEAD; // R channel
+            grid[index + 1] = alive ? ALIVE : DEAD; // G channel
         }
     }
 

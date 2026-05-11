@@ -1,8 +1,6 @@
 #include "GPUGameOfLife.hpp"
 #include "util.hpp"
-
 #include <ituGL/shader/Shader.h>
-
 #include <random>
 #include <fstream>
 #include <iostream>
@@ -22,9 +20,10 @@ void GPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration)
 void GPUGameOfLife::Step() {
     computeProgram.Use();
 
+    // Bind the current texture to image slot 0 for reading
     glBindImageTexture(
         0,
-        readTex->GetHandle(),
+        readTexture->GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -32,9 +31,10 @@ void GPUGameOfLife::Step() {
         GL_RG8
     );
 
+    // Bind the new texture to image slot 1 for writing
     glBindImageTexture(
         1,
-        writeTex->GetHandle(),
+        writeTexture->GetHandle(),
         0,
         GL_FALSE,
         0,
@@ -42,18 +42,22 @@ void GPUGameOfLife::Step() {
         GL_RG8
     );
 
+    // + 7 because width/height might not be divisible by 8
     const GLuint groupsX = (width + 7) / 8;
     const GLuint groupsY = (height + 7) / 8;
+
+    // Run the compute shader
     glDispatchCompute(groupsX, groupsY, 1);
 
+    // Wait until all image writes are finished before proceeding
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    // swap pointers (THIS is the key change)
-    std::swap(readTex, writeTex);
+    // Swap the current texture with the new texture
+    std::swap(readTexture, writeTexture);
 }
 
 void GPUGameOfLife::SetCell(int x, int y, bool alive) {
-    readTex->Bind();
+    readTexture->Bind();
 
     std::byte value = alive ? ALIVE : DEAD;
     std::byte bytePair[2];
@@ -61,6 +65,7 @@ void GPUGameOfLife::SetCell(int x, int y, bool alive) {
     bytePair[0] = value; // R = state
     bytePair[1] = value; // G = trail
 
+    // x, y, 1, 1 means substitute exactly one pixel in the image texture
     glTexSubImage2D(
         GL_TEXTURE_2D,
         0,
@@ -88,7 +93,7 @@ void GPUGameOfLife::SetWrapping(bool value) {
 }
 
 Texture2DObject& GPUGameOfLife::GetTexture() {
-    return *readTex;
+    return *readTexture;
 }
 
 void GPUGameOfLife::SetTrailing(bool value) {
@@ -119,8 +124,8 @@ void GPUGameOfLife::InitializeTextures(bool randomGridGeneration) {
         textures[i].SetParameter(TextureObject::ParameterEnum::MagFilter, GL_NEAREST);
     }
 
-    readTex = &textures[0];
-    writeTex = &textures[1];
+    readTexture = &textures[0];
+    writeTexture = &textures[1];
 }
 
 void GPUGameOfLife::InitializeShader() {

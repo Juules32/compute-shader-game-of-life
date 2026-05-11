@@ -14,10 +14,10 @@ if(APPLE)
     find_library(COREVIDEO_LIBRARY CoreVideo)
 
     set(APPLE_LIBRARIES
-            ${OPENGL_LIBRARY}
-            ${COCOA_LIBRARY}
-            ${IOKIT_LIBRARY}
-            ${COREVIDEO_LIBRARY}
+        ${OPENGL_LIBRARY}
+        ${COCOA_LIBRARY}
+        ${IOKIT_LIBRARY}
+        ${COREVIDEO_LIBRARY}
     )
 endif()
 

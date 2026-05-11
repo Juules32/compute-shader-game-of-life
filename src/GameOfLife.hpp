@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-
 #include "ituGL/texture/Texture2DObject.h"
 
 const auto ALIVE = std::byte{255};

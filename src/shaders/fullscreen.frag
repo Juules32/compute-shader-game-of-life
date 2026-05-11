@@ -28,28 +28,29 @@ const vec3 ALIVE_COLOR = vec3(0.3, 0.7, 1.0);
 
 void main() {
     vec2 data = texture(gridTexture, vUV).rg;
-
     float state = data.r;
     float trail = data.g;
 
-    vec3 color;
-
-    if (state > 0.5) {
+    // Alive cells should not have a trailing effect
+    if (state == 1.0) {
         FragColor = vec4(ALIVE_COLOR, 1.0);
         return;
     }
 
+    // Weak trails become much darker, whereas strong trails dominate
     float t = pow(trail * TRAIL_GAIN, TRAIL_FADE);
 
-    // base plasma gradient
+    // Base plasma gradient interpolated between blue and purple
     vec3 base = mix(COLOR_LOW, COLOR_MID, t);
 
-    // RGB wave distortion (gives “electric instability” feel)
+    // RGB wave distortion gives shimmering color transitions, like electricity
     base.r += RED_WAVE   * sin(t * 12.0);
     base.g += GREEN_WAVE * sin(t * 8.0);
+
+    // Bias towards brighter blues
     base.b += BLUE_WAVE  * t;
 
-    // hot core glow
+    // Bright areas get even brighter
     base += COLOR_HOT * pow(t, GLOW_POWER) * GLOW_STRENGTH;
 
     FragColor = vec4(base, 1.0);

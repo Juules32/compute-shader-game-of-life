@@ -1,5 +1,4 @@
 #include "CPUGameOfLife.hpp"
-
 #include <random>
 #include <vector>
 #include <cassert>
@@ -41,9 +40,8 @@ void CPUGameOfLife::Step() {
             // Normalized previous trail value (0.0-1.0)
             float prevTrail = static_cast<unsigned char>(grid[index + 1]) / 255.0f;
 
-            bool newAlive = false;
-
             // Game of life rules
+            bool newAlive = false;
             if (alive) {
                 newAlive = (neighbors == 2 || neighbors == 3);
             } else {
@@ -51,22 +49,16 @@ void CPUGameOfLife::Step() {
             }
 
             // Trail logic
-            float trail;
-
+            float trail = 0.0f;
             if (isTrailing) {
                 trail = prevTrail * decay;
                 if (newAlive) {
                     trail = 1.0f;
                 }
-            } else {
-                trail = 0.0f;
             }
 
-            // Write R (alive)
-            newGrid[index + 0] = newAlive ? ALIVE : DEAD;
-
-            // Write G (trail)
-            newGrid[index + 1] = static_cast<std::byte>(trail * 255.0f);
+            newGrid[index + 0] = newAlive ? ALIVE : DEAD;                   // Write R (alive)
+            newGrid[index + 1] = static_cast<std::byte>(trail * 255.0f);    // Write G (trail)
         }
     }
 
@@ -110,14 +102,14 @@ void CPUGameOfLife::UpdateTexture() {
 }
 
 int CPUGameOfLife::CountNeighbors(int x, int y) {
-    static const int offsets[8][2] = {
+    const int OFFSETS[8][2] = {
         {-1, -1}, {0, -1}, {1, -1},
         {-1,  0},          {1,  0},
         {-1,  1}, {0,  1}, {1,  1}
     };
 
     int count = 0;
-    for (const auto offset: offsets) {
+    for (const auto offset: OFFSETS) {
         const int nx = x + offset[0];
         const int ny = y + offset[1];
 

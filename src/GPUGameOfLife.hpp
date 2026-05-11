@@ -2,7 +2,6 @@
 
 #include "GameOfLife.hpp"
 #include <vector>
-
 #include "ituGL/shader/ShaderProgram.h"
 
 class GPUGameOfLife : public GameOfLife {
@@ -23,6 +22,6 @@ private:
 
     bool flip = false;
     Texture2DObject textures[2];
-    Texture2DObject* readTex = nullptr;
-    Texture2DObject* writeTex = nullptr;
+    Texture2DObject* readTexture = nullptr;
+    Texture2DObject* writeTexture = nullptr;
 };

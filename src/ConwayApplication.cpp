@@ -2,17 +2,14 @@
 #include "CPUGameOfLife.hpp"
 #include "GPUGameOfLife.hpp"
 #include "util.hpp"
-
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
-
 #include <chrono>
 #include <fstream>
 #include <iostream>
 #include <random>
 #include <vector>
 #include <imgui.h>
-
 
 using Clock = std::chrono::high_resolution_clock;
 
