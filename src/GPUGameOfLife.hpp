@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GameOfLife.hpp"
-#include <vector>
 #include "ituGL/shader/ShaderProgram.h"
 
 class GPUGameOfLife : public GameOfLife {

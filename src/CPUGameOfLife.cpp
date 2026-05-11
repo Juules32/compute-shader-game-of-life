@@ -1,5 +1,4 @@
 #include "CPUGameOfLife.hpp"
-#include <random>
 #include <vector>
 #include <cassert>
 

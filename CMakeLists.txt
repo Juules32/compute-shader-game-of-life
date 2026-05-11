@@ -21,6 +21,9 @@ if(APPLE)
     )
 endif()
 
+# For zed language server functionality
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Include paths
 set(LIBRARIES_SOURCE_PATH ${CMAKE_SOURCE_DIR}/libraries)
 

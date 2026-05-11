@@ -1,8 +1,6 @@
 #include "GPUGameOfLife.hpp"
 #include "util.hpp"
 #include <ituGL/shader/Shader.h>
-#include <random>
-#include <fstream>
 #include <iostream>
 
 void GPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration) {

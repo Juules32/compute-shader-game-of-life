@@ -8,15 +8,15 @@ The program was developed as part of a graphics programming course at the IT Uni
  > You don't have to build the application yourself! Check out [releases](https://github.com/Juules32/compute-shader-game-of-life/releases).
 
 Requirements:
-- A C++ compiler (tested with [GCC](https://gcc.gnu.org/))
+- A C++ compiler (tested with [GCC](https://gcc.gnu.org/) and [clang](https://clang.llvm.org/))
 - [CMake](https://cmake.org/)
 
 From the repository root folder:
 ```
-cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 cd build
 ./compute-shader-game-of-life.exe
 ```
-If `"MinGW Makefiles"` is not installed as a generator,
-the project has also been tested with `"Visual Studio 17 2022"` and `"Ninja"`.
+If `"Ninja"` is not installed as a generator,
+the project has also been tested with `"Visual Studio 17 2022"` and `"MinGW Makefiles"`.

@@ -1,4 +1,4 @@
-# build directories
+# Build directories
 out*
 build*
 cmake-build*
@@ -7,6 +7,7 @@ cmake-build*
 .vs
 .vscode
 .idea
+.zed
 
-# config files
+# Config files
 *.ini

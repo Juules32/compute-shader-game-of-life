@@ -5,10 +5,7 @@
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
 #include <chrono>
-#include <fstream>
 #include <iostream>
-#include <random>
-#include <vector>
 #include <imgui.h>
 
 using Clock = std::chrono::high_resolution_clock;
@@ -130,7 +127,7 @@ void ConwayApplication::UpdateInput() {
 
             int gridWidth = gameOfLife->GetWidth();
             int gridHeight = gameOfLife->GetHeight();
-            
+
             int x = static_cast<int>((mouseX / windowWidth) * gridWidth);
             int y = static_cast<int>((1.0f - mouseY / windowHeight) * gridHeight);
 
@@ -154,7 +151,7 @@ void ConwayApplication::UpdateInput() {
         if (spacebarPressed && previousKeyStates[GLFW_KEY_SPACE] == Window::PressedState::Released) {
             isPaused = !isPaused;
         }
-        
+
         bool f1Pressed = GetMainWindow().IsKeyPressed(GLFW_KEY_F1);
         if (f1Pressed && previousKeyStates[GLFW_KEY_F1] == Window::PressedState::Released) {
             isUIHidden = !isUIHidden;
