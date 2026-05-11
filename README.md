@@ -4,6 +4,9 @@ This is a project written in C++ with the purpose of demonstrating and measuring
 The program was developed as part of a graphics programming course at the IT University of Copenhagen in 2026.
 
 ## How to build and run on Windows
+ >[!NOTE]
+ > You don't have to build the application yourself! Check out [releases](https://github.com/Juules32/compute-shader-game-of-life/releases).
+
 Requirements:
 - A C++ compiler (tested with [GCC](https://gcc.gnu.org/))
 - [CMake](https://cmake.org/)
