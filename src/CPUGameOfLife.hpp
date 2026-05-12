@@ -5,7 +5,13 @@
 
 class CPUGameOfLife : public GameOfLife {
 public:
-    void Initialize(int width, int height, bool randomGridGeneration) override;
+    void Initialize(
+        int width,
+        int height,
+        bool randomGridGeneration,
+        bool isWrapping,
+        bool isTrailing
+    ) override;
     void Step() override;
     void SetCell(int x, int y, bool alive) override;
     bool GetCell(int x, int y) override;

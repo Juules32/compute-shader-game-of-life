@@ -6,18 +6,27 @@
 const auto ALIVE = std::byte{255};
 const auto DEAD = std::byte{0};
 
+const bool INITIAL_IS_WRAPPING = true;
+const bool INITIAL_IS_TRAILING = true;
+
 class GameOfLife {
 protected:
     int width = 0;
     int height = 0;
-    bool isWrapping = true;
-    bool isTrailing = true;
+    bool isWrapping = INITIAL_IS_WRAPPING;
+    bool isTrailing = INITIAL_IS_TRAILING;
 
     std::vector<std::byte> GenerateGrid(bool randomGridGeneration);
 
 public:
     virtual ~GameOfLife() = default;
-    virtual void Initialize(int width, int height, bool randomGridGeneration) = 0;
+    virtual void Initialize(
+        int width,
+        int height,
+        bool randomGridGeneration,
+        bool isWrapping,
+        bool isTrailing
+    ) = 0;
     virtual void Step() = 0;
     virtual void SetCell(int x, int y, bool alive) = 0;
     virtual bool GetCell(int x, int y) = 0;

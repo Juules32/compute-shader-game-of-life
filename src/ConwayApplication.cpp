@@ -1,6 +1,7 @@
 #include "ConwayApplication.hpp"
 #include "CPUGameOfLife.hpp"
 #include "GPUGameOfLife.hpp"
+#include "GameOfLife.hpp"
 #include "util.hpp"
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
@@ -28,20 +29,26 @@ void ConwayApplication::Initialize() {
 
     InitializeShaders();
 
-    UpdateImplementation();
+    UpdateImplementation(INITIAL_IS_WRAPPING, INITIAL_IS_TRAILING);
 
     shaderProgram.Use();
 
     shaderProgram.SetUniform(shaderProgram.GetUniformLocation("gridTexture"), 0);
 }
 
-void ConwayApplication::UpdateImplementation() {
+void ConwayApplication::UpdateImplementation(bool isWrapping, bool isTrailing) {
     if (selectedGameImplementation == GameOfLifeImplementation::CPU) {
         gameOfLife = std::make_unique<CPUGameOfLife>();
     } else {
         gameOfLife = std::make_unique<GPUGameOfLife>();
     }
-    gameOfLife->Initialize(sliderGridWidth, sliderGridHeight, selectedRandomGridGeneration);
+    gameOfLife->Initialize(
+        sliderGridWidth,
+        sliderGridHeight,
+        selectedRandomGridGeneration,
+        isWrapping,
+        isTrailing
+    );
 
     shaderProgram.Use();
 }
@@ -80,7 +87,7 @@ void ConwayApplication::Update() {
     }
 
     if (regenerateGrid) {
-        UpdateImplementation();
+        UpdateImplementation(gameOfLife->GetWrapping(), gameOfLife->GetTrailing());
         regenerateGrid = false;
     }
     if (changeIsWrapping.has_value()) {

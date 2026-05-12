@@ -3,16 +3,19 @@
 #include <ituGL/shader/Shader.h>
 #include <iostream>
 
-void GPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration) {
+void GPUGameOfLife::Initialize(
+    int width,
+    int height,
+    bool randomGridGeneration,
+    bool isWrapping,
+    bool isTrailing
+) {
     this->width = width;
     this->height = height;
-
     InitializeShader();
-
     InitializeTextures(randomGridGeneration);
-
-    SetWrapping(true);
-    SetTrailing(true);
+    SetWrapping(isWrapping);
+    SetTrailing(isTrailing);
 }
 
 void GPUGameOfLife::Step() {

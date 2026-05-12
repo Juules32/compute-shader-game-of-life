@@ -41,7 +41,7 @@ private:
     void UpdateInput();
     void InitializeGeometry();
     void InitializeShaders();
-    void UpdateImplementation();
+    void UpdateImplementation(bool isWrapping, bool isTrailing);
     void RenderGrid();
     void RenderUI();
 

@@ -2,9 +2,17 @@
 #include <vector>
 #include <cassert>
 
-void CPUGameOfLife::Initialize(int width, int height, bool randomGridGeneration) {
+void CPUGameOfLife::Initialize(
+    int width,
+    int height,
+    bool randomGridGeneration,
+    bool isWrapping,
+    bool isTrailing
+) {
     this->width = width;
     this->height = height;
+    SetTrailing(isTrailing);
+    SetWrapping(isWrapping);
 
     grid = GenerateGrid(randomGridGeneration);
 
