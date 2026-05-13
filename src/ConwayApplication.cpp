@@ -1,7 +1,7 @@
 #include "ConwayApplication.hpp"
-#include "CPUGameOfLife.hpp"
-#include "GPUGameOfLife.hpp"
-#include "GameOfLife.hpp"
+#include "SingleThreadedLifeSimulation.hpp"
+#include "ComputeShaderLifeSimulation.hpp"
+#include "LifeSimulation.hpp"
 #include "util.hpp"
 #include <ituGL/shader/Shader.h>
 #include <ituGL/geometry/VertexAttribute.h>
@@ -37,12 +37,12 @@ void ConwayApplication::Initialize() {
 }
 
 void ConwayApplication::UpdateImplementation(bool isWrapping, bool isTrailing) {
-    if (selectedGameImplementation == GameOfLifeImplementation::CPU) {
-        gameOfLife = std::make_unique<CPUGameOfLife>();
+    if (selectedLifeImplementation == LifeImplementation::SingleThreaded) {
+        simulation = std::make_unique<SingleThreadedLifeSimulation>();
     } else {
-        gameOfLife = std::make_unique<GPUGameOfLife>();
+        simulation = std::make_unique<ComputeShaderLifeSimulation>();
     }
-    gameOfLife->Initialize(
+    simulation->Initialize(
         sliderGridWidth,
         sliderGridHeight,
         selectedRandomGridGeneration,
@@ -63,21 +63,21 @@ void ConwayApplication::Update() {
 
     UpdateInput();
 
-    bool updateGameOfLife = false;
+    bool updateSimulation = false;
     if (performSingleStep) {
-        updateGameOfLife = true;
+        updateSimulation = true;
         performSingleStep = false;
     } else {
         currentStepDuration += GetDeltaTime();
-        if (!isPaused && currentStepDuration >= gameStepRate) {
-            currentStepDuration = remainderf(currentStepDuration, gameStepRate);
-            updateGameOfLife = true;
+        if (!isPaused && currentStepDuration >= simulationStepRate) {
+            currentStepDuration = remainderf(currentStepDuration, simulationStepRate);
+            updateSimulation = true;
         }
     }
-    if (updateGameOfLife) {
+    if (updateSimulation) {
         auto updateStart = Clock::now();
 
-        gameOfLife->Step();
+        simulation->Step();
 
         auto updateEnd = Clock::now();
 
@@ -87,15 +87,15 @@ void ConwayApplication::Update() {
     }
 
     if (regenerateGrid) {
-        UpdateImplementation(gameOfLife->GetWrapping(), gameOfLife->GetTrailing());
+        UpdateImplementation(simulation->GetWrapping(), simulation->GetTrailing());
         regenerateGrid = false;
     }
     if (changeIsWrapping.has_value()) {
-        gameOfLife->SetWrapping(changeIsWrapping.value());
+        simulation->SetWrapping(changeIsWrapping.value());
         changeIsWrapping.reset();
     }
     if (changeIsTrailing.has_value()) {
-        gameOfLife->SetTrailing(changeIsTrailing.value());
+        simulation->SetTrailing(changeIsTrailing.value());
         changeIsTrailing.reset();
     }
     if (!isPaused) {
@@ -132,14 +132,14 @@ void ConwayApplication::UpdateInput() {
             float mouseX = mousePosition.x;
             float mouseY = mousePosition.y;
 
-            int gridWidth = gameOfLife->GetWidth();
-            int gridHeight = gameOfLife->GetHeight();
+            int gridWidth = simulation->GetWidth();
+            int gridHeight = simulation->GetHeight();
 
             int x = static_cast<int>((mouseX / windowWidth) * gridWidth);
             int y = static_cast<int>((1.0f - mouseY / windowHeight) * gridHeight);
 
             if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-                gameOfLife->SetCell(x, y, value);
+                simulation->SetCell(x, y, value);
             }
         }
     }
@@ -221,7 +221,7 @@ void ConwayApplication::InitializeShaders() {
 
 void ConwayApplication::RenderGrid() {
     shaderProgram.Use();
-    gameOfLife->GetTexture().Bind();
+    simulation->GetTexture().Bind();
     vao.Bind();
     drawcall.Draw();
 }
@@ -239,9 +239,9 @@ void ConwayApplication::RenderUI() {
         ImGui::SliderInt("Grid Width", &sliderGridWidth, MIN_GRID_SIZE, MAX_GRID_SIZE);
         ImGui::SliderInt("Grid Height", &sliderGridHeight, MIN_GRID_SIZE, MAX_GRID_SIZE);
 
-        ImGui::RadioButton("Single Threaded Implementation", (int*)&selectedGameImplementation, CPU);
+        ImGui::RadioButton("Single Threaded Implementation", (int*)&selectedLifeImplementation, SingleThreaded);
         ImGui::SameLine();
-        ImGui::RadioButton("Compute Shader Implementation", (int*)&selectedGameImplementation, GPU);
+        ImGui::RadioButton("Compute Shader Implementation", (int*)&selectedLifeImplementation, ComputeShader);
 
         ImGui::Checkbox("Random Grid Generation", &selectedRandomGridGeneration);
 
@@ -257,19 +257,19 @@ void ConwayApplication::RenderUI() {
 
         ImGui::SliderFloat(
             "Step Rate",
-            &gameStepRate,
-            MIN_GAME_OF_LIFE_UPDATE_RATE,
-            MAX_GAME_OF_LIFE_UPDATE_RATE
+            &simulationStepRate,
+            MIN_LIFE_STEP_RATE,
+            MAX_LIFE_STEP_RATE
         );
 
-        bool isWrapping = gameOfLife->GetWrapping();
+        bool isWrapping = simulation->GetWrapping();
         if (ImGui::Checkbox("Enable Wrapping", &isWrapping)) {
             changeIsWrapping = isWrapping;
         }
 
         ImGui::SameLine();
 
-        bool isTrailing = gameOfLife->GetTrailing();
+        bool isTrailing = simulation->GetTrailing();
         if (ImGui::Checkbox("Enable Trailing", &isTrailing)) {
             changeIsTrailing = isTrailing;
         }

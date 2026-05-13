@@ -1,23 +1,23 @@
-#include "GameOfLife.hpp"
+#include "LifeSimulation.hpp"
 #include <random>
 
-void GameOfLife::SetWrapping(bool value) {
+void LifeSimulation::SetWrapping(bool value) {
     isWrapping = value;
 }
 
-bool GameOfLife::GetWrapping() {
+bool LifeSimulation::GetWrapping() {
     return isWrapping;
 }
 
-void GameOfLife::SetTrailing(bool value) {
+void LifeSimulation::SetTrailing(bool value) {
     isTrailing = value;
 }
 
-bool GameOfLife::GetTrailing() {
+bool LifeSimulation::GetTrailing() {
     return isTrailing;
 }
 
-std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
+std::vector<std::byte> LifeSimulation::GenerateGrid(bool randomGridGeneration) {
     std::vector<std::byte> grid(width * height * 2);
 
     std::mt19937 rng(std::random_device{}());
@@ -35,10 +35,10 @@ std::vector<std::byte> GameOfLife::GenerateGrid(bool randomGridGeneration) {
     return grid;
 }
 
-int GameOfLife::GetWidth() {
+int LifeSimulation::GetWidth() {
     return width;
 }
 
-int GameOfLife::GetHeight() {
+int LifeSimulation::GetHeight() {
     return height;
 }

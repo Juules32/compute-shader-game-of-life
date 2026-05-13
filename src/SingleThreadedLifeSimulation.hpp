@@ -1,9 +1,9 @@
 #pragma once
 
-#include "GameOfLife.hpp"
+#include "LifeSimulation.hpp"
 #include <vector>
 
-class CPUGameOfLife : public GameOfLife {
+class SingleThreadedLifeSimulation : public LifeSimulation {
 public:
     void Initialize(
         int width,

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "GameOfLife.hpp"
+#include "LifeSimulation.hpp"
 #include "ituGL/shader/ShaderProgram.h"
 
-class GPUGameOfLife : public GameOfLife {
+class ComputeShaderLifeSimulation : public LifeSimulation {
 public:
     void Initialize(
         int width,

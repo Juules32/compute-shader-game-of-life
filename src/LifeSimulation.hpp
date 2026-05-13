@@ -9,7 +9,7 @@ const auto DEAD = std::byte{0};
 const bool INITIAL_IS_WRAPPING = true;
 const bool INITIAL_IS_TRAILING = true;
 
-class GameOfLife {
+class LifeSimulation {
 protected:
     int width = 0;
     int height = 0;
@@ -19,7 +19,7 @@ protected:
     std::vector<std::byte> GenerateGrid(bool randomGridGeneration);
 
 public:
-    virtual ~GameOfLife() = default;
+    virtual ~LifeSimulation() = default;
     virtual void Initialize(
         int width,
         int height,
@@ -40,7 +40,7 @@ public:
     int GetHeight();
 };
 
-enum GameOfLifeImplementation {
-    CPU,
-    GPU,
+enum LifeImplementation {
+    SingleThreaded,
+    ComputeShader,
 };

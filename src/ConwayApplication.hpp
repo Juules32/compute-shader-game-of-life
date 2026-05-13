@@ -9,7 +9,7 @@
 #include <ituGL/geometry/Drawcall.h>
 #include <array>
 #include <unordered_map>
-#include "GameOfLife.hpp"
+#include "LifeSimulation.hpp"
 #include "ituGL/utils/DearImGui.h"
 
 const auto WINDOW_NAME = "Conway's Game of Life";
@@ -22,9 +22,9 @@ const int INITIAL_GRID_HEIGHT = INITIAL_WINDOW_HEIGHT / 10;
 const int MIN_GRID_SIZE = 32;
 const int MAX_GRID_SIZE = static_cast<int>(std::pow(2, 13));
 
-const float INITIAL_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 10.0f;
-const float MIN_GAME_OF_LIFE_UPDATE_RATE = 1.0f / 2000.0f;
-const float MAX_GAME_OF_LIFE_UPDATE_RATE = 1.0f;
+const float INITIAL_LIFE_STEP_RATE = 1.0f / 10.0f;
+const float MIN_LIFE_STEP_RATE = 1.0f / 2000.0f;
+const float MAX_LIFE_STEP_RATE = 1.0f;
 
 const int FRAME_BUFFER_SIZE = 2048;
 
@@ -51,7 +51,7 @@ private:
     Drawcall drawcall;
     DearImGui imGui;
 
-    std::unique_ptr<GameOfLife> gameOfLife;
+    std::unique_ptr<LifeSimulation> simulation;
 
     float currentStepDuration = 0.0f;
 
@@ -65,15 +65,15 @@ private:
     // UI State
     int sliderGridWidth = INITIAL_GRID_WIDTH;
     int sliderGridHeight = INITIAL_GRID_HEIGHT;
-    float gameStepRate = INITIAL_GAME_OF_LIFE_UPDATE_RATE;
-    
-    GameOfLifeImplementation selectedGameImplementation = GameOfLifeImplementation::CPU;
+    float simulationStepRate = INITIAL_LIFE_STEP_RATE;
+
+    LifeImplementation selectedLifeImplementation = LifeImplementation::SingleThreaded;
     bool isPaused = false;
     bool isUIHidden = false;
-    
+
     std::optional<bool> changeIsWrapping = std::nullopt;
     std::optional<bool> changeIsTrailing = std::nullopt;
-    
+
     bool regenerateGrid = false;
     bool performSingleStep = false;
     bool selectedRandomGridGeneration = false;

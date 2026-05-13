@@ -1,8 +1,8 @@
-#include "CPUGameOfLife.hpp"
+#include "SingleThreadedLifeSimulation.hpp"
 #include <vector>
 #include <cassert>
 
-void CPUGameOfLife::Initialize(
+void SingleThreadedLifeSimulation::Initialize(
     int width,
     int height,
     bool randomGridGeneration,
@@ -32,7 +32,7 @@ void CPUGameOfLife::Initialize(
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
-void CPUGameOfLife::Step() {
+void SingleThreadedLifeSimulation::Step() {
     std::vector<std::byte> newGrid(width * height * 2, DEAD);
 
     const float decay = 0.95f;
@@ -74,7 +74,7 @@ void CPUGameOfLife::Step() {
     UpdateTexture();
 }
 
-void CPUGameOfLife::SetCell(int x, int y, bool alive) {
+void SingleThreadedLifeSimulation::SetCell(int x, int y, bool alive) {
     assert(x >= 0 && x < width);
     assert(y >= 0 && y < height);
 
@@ -84,18 +84,18 @@ void CPUGameOfLife::SetCell(int x, int y, bool alive) {
     UpdateTexture();
 }
 
-bool CPUGameOfLife::GetCell(int x, int y) {
+bool SingleThreadedLifeSimulation::GetCell(int x, int y) {
     assert(x >= 0 && x < width);
     assert(y >= 0 && y < height);
 
     return grid[(y * width + x) * 2] == ALIVE;
 }
 
-Texture2DObject& CPUGameOfLife::GetTexture() {
+Texture2DObject& SingleThreadedLifeSimulation::GetTexture() {
     return gridTexture;
 }
 
-void CPUGameOfLife::UpdateTexture() {
+void SingleThreadedLifeSimulation::UpdateTexture() {
     gridTexture.Bind();
     gridTexture.SetImage<std::byte>(
         0,
@@ -108,7 +108,7 @@ void CPUGameOfLife::UpdateTexture() {
     );
 }
 
-int CPUGameOfLife::CountNeighbors(int x, int y) {
+int SingleThreadedLifeSimulation::CountNeighbors(int x, int y) {
     const int OFFSETS[8][2] = {
         {-1, -1}, {0, -1}, {1, -1},
         {-1,  0},          {1,  0},
