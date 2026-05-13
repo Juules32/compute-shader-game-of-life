@@ -47,15 +47,46 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE HDR_FILES CONFIGURE_DEPENDS "src/*.h")
 file(GLOB_RECURSE SHADERS CONFIGURE_DEPENDS "src/shaders/*.*")
 
+# Copy shaders incrementally when changed
+foreach(SHADER ${SHADERS})
+
+    # Path relative to src/shaders
+    file(RELATIVE_PATH REL_PATH
+            "${CMAKE_SOURCE_DIR}/src/shaders"
+            "${SHADER}"
+    )
+
+    # Final destination path
+    set(DEST_FILE
+            "${CMAKE_BINARY_DIR}/shaders/${REL_PATH}"
+    )
+
+    # Destination directory
+    get_filename_component(DEST_DIR "${DEST_FILE}" DIRECTORY)
+
+    add_custom_command(
+        OUTPUT "${DEST_FILE}"
+
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DEST_DIR}"
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SHADER}"
+                "${DEST_FILE}"
+
+        DEPENDS "${SHADER}"
+
+        COMMENT "Copying shader ${REL_PATH}"
+    )
+
+    list(APPEND COPIED_SHADERS "${DEST_FILE}")
+
+endforeach()
+
+# Target responsible for shader copying
+add_custom_target(copy_shaders ALL DEPENDS ${COPIED_SHADERS})
+
 # Define executable based on source files
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${HDR_FILES} ${SHADERS})
 
 # Link external binaries
 target_link_libraries(${PROJECT_NAME} glad glfw itugl ${APPLE_LIBRARIES})
-
-# Copy shaders into destination folder post-build
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/src/shaders
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders
-)
