@@ -90,3 +90,10 @@ add_executable(${PROJECT_NAME} ${SRC_FILES} ${HDR_FILES} ${SHADERS})
 
 # Link external binaries
 target_link_libraries(${PROJECT_NAME} glad glfw itugl ${APPLE_LIBRARIES})
+
+# If using MSVC, choose runtime behavior
+if (WIN32)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded"
+    )
+endif()

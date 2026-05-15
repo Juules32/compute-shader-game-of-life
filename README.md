@@ -9,14 +9,12 @@ The program was developed as part of a graphics programming course at the IT Uni
 
 Requirements:
 - A C++ compiler (tested with [GCC](https://gcc.gnu.org/) and [clang](https://clang.llvm.org/))
+- A generator (tested with `"Ninja"`, `"Visual Studio 17 2022"` and `"MinGW Makefiles"`)
 - [CMake](https://cmake.org/)
 
 From the repository root folder:
 ```
-cmake -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-cd build
-./compute-shader-game-of-life.exe
+cmake -B build -DCMAKE_BUILD_TYPE=Release     # Configure
+cmake --build build                           # Build
+./build/compute-shader-game-of-life.exe       # Run
 ```
-If `"Ninja"` is not installed as a generator,
-the project has also been tested with `"Visual Studio 17 2022"` and `"MinGW Makefiles"`.
